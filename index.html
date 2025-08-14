@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>创意生产任务管理</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <!-- 筛选项区域 -->
+        <div class="filter-section">
+            <h3>2、筛选项</h3>
+            <div class="filter-row">
+                <div class="filter-item">
+                    <label>创建时间</label>
+                    <div class="time-range">
+                        <input type="datetime-local" id="startTime" placeholder="开始时间">
+                        <span class="time-separator">至</span>
+                        <input type="datetime-local" id="endTime" placeholder="结束时间">
+                    </div>
+                </div>
+                <div class="filter-item">
+                    <label>提单人</label>
+                    <input type="text" placeholder="请输入提单人手机号">
+                </div>
+                <div class="filter-item">
+                    <label>设计师</label>
+                    <select>
+                        <option value="">请选择设计师</option>
+                        <option value="AIGC">AIGC</option>
+                        <option value="ued">ued</option>
+                        <option value="OA">OA</option>
+                    </select>
+                </div>
+                <div class="filter-item">
+                    <label>创意状态</label>
+                    <select>
+                        <option value="">请选择创意状态</option>
+                        <option value="pending">首次待生成</option>
+                        <option value="generating">首次生成中</option>
+                        <option value="completed">首次生成完成</option>
+                        <option value="failed">首次生成失败</option>
+                        <option value="re-pending">重新待生成</option>
+                        <option value="re-generating">重新生成中</option>
+                        <option value="re-completed">重新生成完成</option>
+                        <option value="re-failed">重新生成失败</option>
+                    </select>
+                </div>
+            </div>
+            <div class="filter-row">
+                <div class="filter-item">
+                    <label>生成ID</label>
+                    <input type="text" placeholder="请输入生成ID">
+                </div>
+                <div class="filter-item">
+                    <label>生成类型</label>
+                    <select>
+                        <option value="">请选择生成类型</option>
+                        <option value="type1">类型1</option>
+                        <option value="type2">类型2</option>
+                    </select>
+                </div>
+                <div class="filter-item">
+                    <label>渠道</label>
+                    <select>
+                        <option value="">请选择渠道</option>
+                        <option value="douyin">抖音</option>
+                        <option value="xiaohongshu">小红书</option>
+                        <option value="wechat">微信</option>
+                    </select>
+                </div>
+                <div class="filter-item">
+                    <label>商品ID</label>
+                    <input type="text" placeholder="请输入商品ID">
+                </div>
+            </div>
+            <div class="filter-row">
+                <div class="filter-item">
+                    <label>应用场景</label>
+                    <select>
+                        <option value="">请选择应用场景</option>
+                        <option value="daily">日常</option>
+                        <option value="promotion">促销</option>
+                        <option value="festival">节日</option>
+                    </select>
+                </div>
+                <div class="filter-item">
+                    <label></label>
+                    <div class="filter-buttons">
+                        <button class="btn btn-primary" onclick="queryData()">查询</button>
+                        <button class="btn btn-secondary" onclick="resetFilters()">重置</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 列表区域 -->
+        <div class="list-section">
+            <h3>1、列表字段</h3>
+            <div class="list-header">
+                <div class="checkbox-wrapper">
+                    <input type="checkbox" id="selectAll" onchange="toggleSelectAll()">
+                    <label for="selectAll">全选</label>
+                </div>
+                <div class="bulk-actions" id="bulkActions" style="display: none;">
+                    <button class="btn btn-primary" onclick="assignDesigner()">分配设计师</button>
+                    <button class="btn btn-success" onclick="exportTasks()">导出任务</button>
+                </div>
+            </div>
+            <div class="table-container">
+                <table id="taskTable">
+                    <thead>
+                        <tr>
+                            <th width="50">选择</th>
+                            <th>创建时间</th>
+                            <th>期望交付时间</th>
+                            <th>提单人</th>
+                            <th>设计师</th>
+                            <th>创意状态</th>
+                            <th>更新时间</th>
+                            <th>生成ID</th>
+                            <th>生成类型</th>
+                            <th>渠道</th>
+                            <th>素材来源</th>
+                            <th>模板分类</th>
+                            <th>商品数量</th>
+                            <th>素材数量</th>
+                            <th>素材尺寸</th>
+                            <th>商品ID</th>
+                            <th>应用场景</th>
+                            <th>创意策略标签</th>
+                            <th>重新生成建议</th>
+                            <th width="200">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="taskTableBody">
+                        <!-- 数据将通过JavaScript动态生成 -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+
+    </div>
+
+    <!-- 分配设计师弹窗 -->
+    <div id="assignModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>分配设计师</h3>
+                <span class="close" onclick="closeModal('assignModal')">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div id="assignmentEntries">
+                    <div class="assignment-entry">
+                        <div class="form-group">
+                            <label>选择设计师OA</label>
+                            <select class="designer-select">
+                                <option value="">(下拉选项)</option>
+                                <option value="AIGC">AIGC</option>
+                                <option value="ued">ued</option>
+                                <option value="OA001">OA001</option>
+                                <option value="OA002">OA002</option>
+                                <option value="OA003">OA003</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>分配素材数量</label>
+                            <input type="number" class="material-quantity" value="1" min="1">
+                        </div>
+                    </div>
+                </div>
+                <div class="add-assignment">
+                    <button class="btn btn-secondary" onclick="addAssignmentEntry()">
+                        <i class="fas fa-plus"></i> 添加分配
+                    </button>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" onclick="confirmAssign()">确认</button>
+                <button class="btn btn-secondary" onclick="closeModal('assignModal')">取消</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 上传素材弹窗 -->
+    <div id="uploadModal" class="modal">
+        <div class="modal-content upload-modal-content">
+            <div class="modal-header">
+                <h3>上传素材</h3>
+                <span class="close" onclick="closeModal('uploadModal')">&times;</span>
+            </div>
+            <div class="modal-body">
+                <!-- 上传区域 -->
+                <div class="upload-area">
+                    <div class="upload-zone" id="uploadZone">
+                        <div class="upload-instructions">
+                            <p>点击上传文件,最多支持20条素材(图片或视频)</p>
+                            <p>支持上传图片JPG、PNG图片格式或者视频mp4格式</p>
+                            <p>图片小于500kb、视频小于100M</p>
+                        </div>
+                        <input type="file" id="materialFiles" multiple accept=".jpg,.jpeg,.png,.mp4" style="display: none;">
+                    </div>
+                </div>
+                
+                <!-- 素材列表 -->
+                <div class="materials-list" id="materialsList">
+                    <!-- 素材项将通过JavaScript动态生成 -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" onclick="confirmUpload()">确认上传</button>
+                <button class="btn btn-secondary" onclick="closeModal('uploadModal')">取消</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
