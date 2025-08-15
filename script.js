@@ -315,28 +315,37 @@ function getOperationButtonsHTML(task) {
     }
     // OA设计师 - 根据状态显示不同按钮
     else if (task.designer && task.designer.startsWith('OA')) {
-        // 检查是否是当前用户的OA
-        if (task.designer === currentUser) {
-            if (task.status === 'pending' || task.status === 're-pending') {
+        // 遵循有权限的流程，所有OA设计师都可以操作
+        if (task.status === 'pending' || task.status === 're-pending') {
+            buttonsHTML = `
+                <button class="btn btn-primary" onclick="startProduction(${task.id})">开始生产</button>
+                <button class="btn btn-danger" onclick="closeTask(${task.id})">关闭</button>
+            `;
+        }
+        else if (task.status === 'generating' || task.status === 're-generating') {
+            // 针对单品单图，显示上传素材、图创作、关闭三个按钮
+            if (task.generationType === '单品单图') {
                 buttonsHTML = `
-                    <button class="btn btn-primary" onclick="startProduction(${task.id})">开始生产</button>
-                    <button class="btn btn-danger" onclick="closeTask(${task.id})">关闭</button>
+                    <button class="btn btn-success" onclick="openUploadModal(${task.id})">上传素材</button>
                     <button class="btn btn-secondary" onclick="openImageCreation(${task.id})">图创作</button>
+                    <button class="btn btn-danger" onclick="closeTask(${task.id})">关闭</button>
+                `;
+            } else {
+                // 其他类型只显示上传素材和关闭按钮
+                buttonsHTML = `
+                    <button class="btn btn-success" onclick="openUploadModal(${task.id})">上传素材</button>
+                    <button class="btn btn-danger" onclick="closeTask(${task.id})">关闭</button>
                 `;
             }
-            else if (task.status === 'generating' || task.status === 're-generating') {
-                buttonsHTML = '<button class="btn btn-success" onclick="openUploadModal(' + task.id + ')">上传素材</button>';
-            }
-            else if (task.status === 'uploaded') {
-                buttonsHTML = '<button class="btn btn-primary" onclick="syncToWeimiao(' + task.id + ')">同步唯妙</button>';
-            }
-        } else {
-            buttonsHTML = '<button class="btn btn-secondary btn-disabled" disabled>无操作权限</button>';
+        }
+        else if (task.status === 'uploaded') {
+            buttonsHTML = '<button class="btn btn-primary" onclick="syncToWeimiao(' + task.id + ')">同步唯妙</button>';
         }
     }
     // 其他情况 - 无操作按钮
     else {
-        buttonsHTML = '<button class="btn btn-secondary btn-disabled" disabled>无操作</button>';
+        // 移除无操作选项，遵循有权限的流程
+        buttonsHTML = '';
     }
     
     return buttonsHTML;
@@ -351,10 +360,10 @@ function getSubTaskOperationButtonsHTML(subTask, parentTaskId, subIndex) {
         buttonsHTML = `
             <button class="btn btn-primary" onclick="startSubTaskProduction(${parentTaskId}, ${subIndex})">开始生产</button>
             <button class="btn btn-danger" onclick="closeSubTask(${parentTaskId}, ${subIndex})">关闭</button>
-            <button class="btn btn-secondary" onclick="openSubTaskImageCreation(${parentTaskId}, ${subIndex})">图创作</button>
         `;
     }
     else if (subTask.status === 'generating' || subTask.status === 're-generating') {
+        // 子任务只显示上传素材按钮（子任务不支持图创作）
         buttonsHTML = '<button class="btn btn-success" onclick="openSubTaskUploadModal(' + parentTaskId + ', ' + subIndex + ')">上传素材</button>';
     }
     else if (subTask.status === 'uploaded') {
@@ -666,10 +675,19 @@ function exportTasks() {
 function startProduction(taskId) {
     const task = taskData.find(t => t.id === taskId);
     if (task) {
-        task.status = 'generating';
-        task.updateTime = new Date().toLocaleString('zh-CN');
-        renderTable();
-        alert('已开始生产');
+        // 针对单品单图，开始生产后状态变为'generating'，显示上传素材、图创作、关闭按钮
+        if (task.generationType === '单品单图') {
+            task.status = 'generating';
+            task.updateTime = new Date().toLocaleString('zh-CN');
+            renderTable();
+            alert('已开始生产');
+        } else {
+            // 其他类型保持原有逻辑
+            task.status = 'generating';
+            task.updateTime = new Date().toLocaleString('zh-CN');
+            renderTable();
+            alert('已开始生产');
+        }
     }
 }
 

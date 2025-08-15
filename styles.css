@@ -225,8 +225,8 @@ td:last-child {
     background-color: white;
     z-index: 5;
     box-shadow: -2px 0 5px rgba(0, 0, 0, 0.1);
-    min-width: 200px;
-    width: 200px;
+    min-width: 180px;
+    width: 180px;
 }
 
 th:last-child {
@@ -284,18 +284,24 @@ tr:hover {
 /* 操作按钮容器 */
 .operation-buttons {
     display: flex;
-    gap: 5px;
-    flex-wrap: wrap;
+    gap: 3px;
+    flex-wrap: nowrap;
     justify-content: flex-start;
     align-items: center;
-    min-height: 32px;
+    min-height: 28px;
+    max-width: 170px;
+    overflow: hidden;
 }
 
 .operation-buttons .btn {
-    padding: 4px 8px;
-    font-size: 12px;
-    min-width: 60px;
+    padding: 2px 6px;
+    font-size: 11px;
+    min-width: 50px;
+    max-width: 60px;
     white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex-shrink: 1;
 }
 
 /* 弹窗样式 */
