@@ -281,6 +281,42 @@ tr:hover {
     color: #721c24;
 }
 
+/* VTD素材尺寸样式 */
+.material-size-vtd {
+    cursor: help;
+    color: #333;
+    position: relative;
+}
+
+.material-size-vtd:hover::after {
+    content: attr(data-full-text);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #333;
+    color: white;
+    padding: 8px 12px;
+    border-radius: 4px;
+    font-size: 12px;
+    white-space: nowrap;
+    z-index: 1000;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    margin-bottom: 5px;
+}
+
+.material-size-vtd:hover::before {
+    content: '';
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 5px solid transparent;
+    border-top-color: #333;
+    margin-bottom: -5px;
+    z-index: 1000;
+}
+
 /* 操作按钮容器 */
 .operation-buttons {
     display: flex;

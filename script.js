@@ -18,7 +18,7 @@ const mockData = [
         generationType: '单品多图',
         channel: '抖音',
         materialSource: 'AI生成',
-        templateCategory: '服装',
+        templateCategory: '原生图',
         productQuantity: 1,
         materialQuantity: 3,
         materialSize: '1280x720',
@@ -39,7 +39,7 @@ const mockData = [
         generationType: '单品多视频',
         channel: '小红书',
         materialSource: '用户上传',
-        templateCategory: '美妆',
+        templateCategory: '模板图',
         productQuantity: 2,
         materialQuantity: 5,
         materialSize: '1920x1080',
@@ -60,7 +60,7 @@ const mockData = [
         generationType: '单品单图',
         channel: '微信',
         materialSource: '模板库',
-        templateCategory: '数码',
+        templateCategory: '原生图',
         productQuantity: 1,
         materialQuantity: 2,
         materialSize: '1080x1920',
@@ -81,7 +81,7 @@ const mockData = [
         generationType: '单品单视频',
         channel: '抖音',
         materialSource: 'AI生成',
-        templateCategory: '食品',
+        templateCategory: '模板图',
         productQuantity: 3,
         materialQuantity: 4,
         materialSize: '1280x720',
@@ -102,7 +102,7 @@ const mockData = [
         generationType: '单品多视频',
         channel: '小红书',
         materialSource: 'AI生成',
-        templateCategory: '家居',
+        templateCategory: '原生图',
         productQuantity: 1,
         materialQuantity: 6,
         materialSize: '1920x1080',
@@ -115,6 +115,27 @@ const mockData = [
             { designer: 'OA002', status: 'completed', materialQuantity: 2 },
             { designer: 'OA003', status: 'completed', materialQuantity: 2 }
         ]
+    },
+    {
+        id: 6,
+        createTime: '2024-01-16 14:20:00',
+        expectedTime: '2024-01-19 18:00:00',
+        submitter: '134****5678',
+        designer: 'OA002',
+        status: 'generating',
+        updateTime: '2024-01-16 15:30:00',
+        generationId: 'GEN006',
+        generationType: '单品单图',
+        channel: 'VTD',
+        materialSource: 'AI生成',
+        templateCategory: '原生图',
+        productQuantity: 1,
+        materialQuantity: 2,
+        materialSize: '快手PD；网易PD；百度PD视频',
+        productId: 'PROD009',
+        applicationScenario: '日常',
+        creativeStrategyTag: '科技',
+        regenerationSuggestion: ''
     }
 ];
 
@@ -130,6 +151,16 @@ const statusMap = {
     're-completed': { text: '重新生成完成', class: 'status-completed' },
     're-failed': { text: '重新生成失败', class: 'status-failed' }
 };
+
+// 格式化素材尺寸显示
+function formatMaterialSize(materialSize, channel) {
+    if (channel === 'VTD') {
+        // 对于VTD渠道，只显示前7个字符，添加hover效果
+        const displayText = materialSize.substring(0, 7);
+        return `<span class="material-size-vtd" data-full-text="${materialSize}">${displayText}...</span>`;
+    }
+    return materialSize;
+}
 
 // 初始化页面
 document.addEventListener('DOMContentLoaded', function() {
@@ -180,7 +211,7 @@ function renderTable() {
             <td>${task.templateCategory}</td>
             <td>${task.productQuantity}</td>
             <td>${task.materialQuantity}</td>
-            <td>${task.materialSize}</td>
+            <td>${formatMaterialSize(task.materialSize, task.channel)}</td>
             <td>${task.productId}</td>
             <td>${task.applicationScenario}</td>
             <td>${task.creativeStrategyTag}</td>
@@ -417,7 +448,16 @@ function queryData() {
         if (filters.status && task.status !== filters.status) return false;
         if (filters.generationId && !task.generationId.includes(filters.generationId)) return false;
         if (filters.generationType && task.generationType !== filters.generationType) return false;
-        if (filters.channel && task.channel !== filters.channel) return false;
+        if (filters.channel && task.channel !== filters.channel) {
+            // 处理渠道映射
+            const channelMap = {
+                'douyin': '抖音',
+                'xiaohongshu': '小红书', 
+                'wechat': '微信',
+                'vtd': 'VTD'
+            };
+            if (task.channel !== channelMap[filters.channel]) return false;
+        }
         if (filters.productId && !task.productId.includes(filters.productId)) return false;
         if (filters.applicationScenario && task.applicationScenario !== filters.applicationScenario) return false;
         return true;
