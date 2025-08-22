@@ -194,8 +194,15 @@
                 <span class="close" onclick="closeModal('uploadModal')">&times;</span>
             </div>
             <div class="modal-body">
+                <!-- 继续上传按钮 -->
+                <div class="continue-upload-section" id="continueUploadSection" style="display: none;">
+                    <button class="btn btn-secondary" onclick="showUploadArea()">
+                        <i class="fas fa-plus"></i> 继续上传
+                    </button>
+                </div>
+                
                 <!-- 上传区域 -->
-                <div class="upload-area">
+                <div class="upload-area" id="uploadArea">
                     <div class="upload-zone" id="uploadZone">
                         <div class="upload-instructions">
                             <p>点击上传文件,最多支持20条素材(图片或视频)</p>
@@ -206,9 +213,17 @@
                     </div>
                 </div>
                 
-                <!-- 素材列表 -->
-                <div class="materials-list" id="materialsList">
-                    <!-- 素材项将通过JavaScript动态生成 -->
+                <!-- 素材配置区域 -->
+                <div class="materials-config-container" id="materialsConfigContainer" style="display: none;">
+                    <!-- 快速跳转列表 -->
+                    <div class="material-nav-list" id="materialNavList">
+                        <!-- 快速跳转列表将通过JavaScript动态生成 -->
+                    </div>
+                    
+                    <!-- 素材列表 -->
+                    <div class="materials-list" id="materialsList">
+                        <!-- 素材项将通过JavaScript动态生成 -->
+                    </div>
                 </div>
             </div>
             <div class="modal-footer">

@@ -759,6 +759,18 @@ function openUploadModal(taskId) {
     uploadedMaterials = []; // 清空素材列表
     renderMaterialsList();
     setupUploadZone();
+    
+    // 首次打开时显示上传区域，隐藏其他区域
+    document.getElementById('uploadArea').style.display = 'block';
+    document.getElementById('materialsConfigContainer').style.display = 'none';
+    document.getElementById('continueUploadSection').style.display = 'none';
+}
+
+// 显示上传区域
+function showUploadArea() {
+    document.getElementById('uploadArea').style.display = 'block';
+    document.getElementById('materialsConfigContainer').style.display = 'none';
+    document.getElementById('continueUploadSection').style.display = 'none';
 }
 
 // 设置上传区域
@@ -829,17 +841,64 @@ function addMaterial(file) {
     
     uploadedMaterials.push(material);
     renderMaterialsList();
+    
+    // 添加第一个素材后切换到配置模式
+    if (uploadedMaterials.length === 1) {
+        document.getElementById('uploadArea').style.display = 'none';
+        document.getElementById('materialsConfigContainer').style.display = 'flex';
+        document.getElementById('continueUploadSection').style.display = 'flex';
+    }
 }
 
 // 渲染素材列表
 function renderMaterialsList() {
     const materialsList = document.getElementById('materialsList');
-    materialsList.innerHTML = '';
+    const materialNavList = document.getElementById('materialNavList');
     
+    materialsList.innerHTML = '';
+    materialNavList.innerHTML = '';
+    
+    // 渲染快速跳转列表
+    uploadedMaterials.forEach((material, index) => {
+        const navElement = createMaterialNavElement(material, index);
+        materialNavList.appendChild(navElement);
+    });
+    
+    // 渲染素材列表
     uploadedMaterials.forEach((material, index) => {
         const materialElement = createMaterialElement(material, index);
         materialsList.appendChild(materialElement);
     });
+    
+    // 默认激活第一个素材
+    if (uploadedMaterials.length > 0) {
+        setActiveMaterial(0);
+    }
+}
+
+// 创建快速跳转列表元素
+function createMaterialNavElement(material, index) {
+    const div = document.createElement('div');
+    div.className = 'material-nav-item';
+    div.dataset.materialIndex = index;
+    div.onclick = () => scrollToMaterial(index);
+    
+    // 获取文件信息
+    const fileInfo = getFileInfo(material.file);
+    
+    // 检查素材是否已配置（有标签或关联商品）
+    const isConfigured = material.selectedTags.length > 0 || 
+                        material.selectedProducts.length > 0 || 
+                        material.textTags.trim() !== '';
+    
+    div.innerHTML = `
+        <div class="material-status-indicator ${isConfigured ? 'configured' : ''}"></div>
+        <div class="material-nav-title">素材${index + 1}</div>
+        <div class="material-nav-info">${material.name}</div>
+        <div class="material-nav-info">${fileInfo.dimensions} | ${fileInfo.size}</div>
+    `;
+    
+    return div;
 }
 
 // 创建素材元素
@@ -931,36 +990,36 @@ function createMaterialElement(material, index) {
                     </div>
                     <div class="product-list" id="productList_${material.id}" style="display: none;">
                         <div class="product-item">
-                            <input type="checkbox" onchange="toggleProduct(${material.id}, 'PROD001')">
-                            <span>时尚休闲T恤 - ¥89</span>
+                            <input type="checkbox" onchange="toggleProduct(${material.id}, '6920832209174221770')">
+                            <span>轻奢高级感气质优雅泡泡袖连衣裙女夏季圆领收腰长裙-6920832209174221770</span>
                         </div>
                         <div class="product-item">
-                            <input type="checkbox" onchange="toggleProduct(${material.id}, 'PROD002')">
-                            <span>经典牛仔裤 - ¥199</span>
+                            <input type="checkbox" onchange="toggleProduct(${material.id}, '6920832209174221771')">
+                            <span>时尚百搭显瘦高腰阔腿裤女夏季薄款直筒裤-6920832209174221771</span>
                         </div>
                         <div class="product-item">
-                            <input type="checkbox" onchange="toggleProduct(${material.id}, 'PROD003')">
-                            <span>运动鞋 - ¥299</span>
+                            <input type="checkbox" onchange="toggleProduct(${material.id}, '6920832209174221772')">
+                            <span>新款韩版宽松显瘦T恤女短袖夏季纯棉打底衫-6920832209174221772</span>
                         </div>
                         <div class="product-item">
-                            <input type="checkbox" onchange="toggleProduct(${material.id}, 'PROD004')">
-                            <span>休闲外套 - ¥399</span>
+                            <input type="checkbox" onchange="toggleProduct(${material.id}, '6920832209174221773')">
+                            <span>夏季新款连衣裙女气质收腰显瘦碎花裙-6920832209174221773</span>
                         </div>
                         <div class="product-item">
-                            <input type="checkbox" onchange="toggleProduct(${material.id}, 'PROD005')">
-                            <span>时尚包包 - ¥159</span>
+                            <input type="checkbox" onchange="toggleProduct(${material.id}, '6920832209174221774')">
+                            <span>时尚百搭牛仔外套女春秋新款宽松显瘦-6920832209174221774</span>
                         </div>
                         <div class="product-item">
-                            <input type="checkbox" onchange="toggleProduct(${material.id}, 'PROD006')">
-                            <span>太阳镜 - ¥89</span>
+                            <input type="checkbox" onchange="toggleProduct(${material.id}, '6920832209174221775')">
+                            <span>新款韩版高腰半身裙女夏季A字裙显瘦百褶裙-6920832209174221775</span>
                         </div>
                         <div class="product-item">
-                            <input type="checkbox" onchange="toggleProduct(${material.id}, 'PROD007')">
-                            <span>手表 - ¥599</span>
+                            <input type="checkbox" onchange="toggleProduct(${material.id}, '6920832209174221776')">
+                            <span>夏季新款凉鞋女时尚百搭平底鞋舒适透气-6920832209174221776</span>
                         </div>
                         <div class="product-item">
-                            <input type="checkbox" onchange="toggleProduct(${material.id}, 'PROD008')">
-                            <span>香水 - ¥299</span>
+                            <input type="checkbox" onchange="toggleProduct(${material.id}, '6920832209174221777')">
+                            <span>时尚百搭单肩包女夏季新款小方包斜挎包-6920832209174221777</span>
                         </div>
                     </div>
                 </div>
@@ -999,10 +1058,79 @@ function getFileInfo(file) {
     };
 }
 
+// 滚动到指定素材
+function scrollToMaterial(index) {
+    const materialElement = document.querySelector(`[data-material-id="${uploadedMaterials[index].id}"]`);
+    if (materialElement) {
+        // 滚动到素材位置
+        materialElement.scrollIntoView({ 
+            behavior: 'smooth', 
+            block: 'start' 
+        });
+        
+        // 设置激活状态
+        setActiveMaterial(index);
+        
+        // 添加高亮效果
+        materialElement.style.border = '2px solid #2196f3';
+        materialElement.style.boxShadow = '0 0 10px rgba(33, 150, 243, 0.3)';
+        
+        // 3秒后移除高亮效果
+        setTimeout(() => {
+            materialElement.style.border = '';
+            materialElement.style.boxShadow = '';
+        }, 3000);
+    }
+}
+
+// 设置激活的素材
+function setActiveMaterial(index) {
+    // 移除所有激活状态
+    document.querySelectorAll('.material-nav-item').forEach(item => {
+        item.classList.remove('active');
+    });
+    
+    // 设置当前激活状态
+    const activeNavItem = document.querySelector(`[data-material-index="${index}"]`);
+    if (activeNavItem) {
+        activeNavItem.classList.add('active');
+    }
+}
+
+// 更新素材状态指示灯
+function updateMaterialStatusIndicator(materialId) {
+    const material = uploadedMaterials.find(m => m.id === materialId);
+    if (!material) return;
+    
+    const materialIndex = uploadedMaterials.findIndex(m => m.id === materialId);
+    const navItem = document.querySelector(`[data-material-index="${materialIndex}"]`);
+    
+    if (navItem) {
+        const indicator = navItem.querySelector('.material-status-indicator');
+        if (indicator) {
+            // 检查素材是否已配置（有标签或关联商品）
+            const isConfigured = material.selectedTags.length > 0 || 
+                                material.selectedProducts.length > 0 || 
+                                material.textTags.trim() !== '';
+            
+            if (isConfigured) {
+                indicator.classList.add('configured');
+            } else {
+                indicator.classList.remove('configured');
+            }
+        }
+    }
+}
+
 // 删除素材
 function deleteMaterial(materialId) {
     uploadedMaterials = uploadedMaterials.filter(m => m.id !== materialId);
     renderMaterialsList();
+    
+    // 如果删除后还有素材，设置第一个为激活状态
+    if (uploadedMaterials.length > 0) {
+        setActiveMaterial(0);
+    }
 }
 
 // 更新素材名称
@@ -1025,6 +1153,7 @@ function toggleTag(materialId, tag) {
             material.selectedTags.push(tag);
         }
         updateTagButtons(materialId);
+        updateMaterialStatusIndicator(materialId);
     }
 }
 
@@ -1062,6 +1191,7 @@ function updateTextTags(materialId, text) {
     if (material) {
         material.textTags = text;
         updateCharCount(materialId, 'text', text.length);
+        updateMaterialStatusIndicator(materialId);
     }
 }
 
@@ -1114,6 +1244,7 @@ function toggleProduct(materialId, productId) {
             material.selectedProducts.push(productId);
         }
         updateProductItems(materialId);
+        updateMaterialStatusIndicator(materialId);
     }
 }
 
@@ -1187,6 +1318,11 @@ function closeModal(modalId) {
     if (modalId === 'uploadModal') {
         document.getElementById('materialFiles').value = '';
         document.getElementById('uploadPreview').innerHTML = '';
+        
+        // 重置上传弹窗状态到初始状态
+        document.getElementById('uploadArea').style.display = 'block';
+        document.getElementById('materialsConfigContainer').style.display = 'none';
+        document.getElementById('continueUploadSection').style.display = 'none';
     } else if (modalId === 'assignModal') {
         // 重置分配设计师弹窗
         const assignmentEntries = document.getElementById('assignmentEntries');
