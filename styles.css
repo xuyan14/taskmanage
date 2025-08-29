@@ -427,9 +427,210 @@ tr:hover {
 
 /* 上传素材弹窗样式 */
 .upload-modal-content {
-    max-width: 1200px;
+    max-width: 1400px;
     width: 95%;
     max-height: 90vh;
+}
+
+/* 素材配置包装器 */
+.materials-config-wrapper {
+    display: flex;
+    flex-direction: column;
+    height: 500px;
+}
+
+/* 素材配置头部 */
+.materials-config-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #e9ecef;
+}
+
+/* 继续上传区域 */
+.continue-upload-section {
+    display: flex;
+    justify-content: flex-end;
+}
+
+.continue-upload-section .btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    font-size: 14px;
+    font-weight: 500;
+    background-color: #3498db;
+    border-color: #3498db;
+    color: white;
+}
+
+.continue-upload-section .btn:hover {
+    background-color: #2980b9;
+    border-color: #2980b9;
+}
+
+/* 素材配置容器 */
+.materials-config-container {
+    display: flex;
+    gap: 20px;
+    flex: 1;
+    min-height: 0;
+}
+
+/* 快速跳转列表 */
+.material-nav-list {
+    width: 200px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 15px;
+    overflow-y: auto;
+    border: 1px solid #e9ecef;
+    flex-shrink: 0;
+}
+
+.material-nav-item {
+    position: relative;
+    padding: 8px 12px;
+    margin-bottom: 8px;
+    background: white;
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 14px;
+    color: #495057;
+    padding-right: 20px;
+}
+
+.material-nav-item:hover {
+    background: #e3f2fd;
+    border-color: #2196f3;
+    color: #1976d2;
+}
+
+.material-nav-item.active {
+    background: #2196f3;
+    border-color: #1976d3;
+    color: white;
+}
+
+.material-nav-item .material-nav-title {
+    font-weight: 500;
+    margin-bottom: 2px;
+}
+
+.material-nav-item .material-nav-item .material-nav-info {
+    font-size: 12px;
+    opacity: 0.8;
+}
+
+/* 状态指示灯 */
+.material-status-indicator {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: #e74c3c;
+}
+
+.material-status-indicator.configured {
+    background-color: #27ae60;
+}
+
+/* 批量解析相关样式 */
+.batch-parse-section {
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.batch-parse-modal-content {
+    width: 90%;
+    max-width: 1200px;
+    max-height: 80vh;
+}
+
+.batch-parse-instructions {
+    background-color: #fff3cd;
+    border: 1px solid #ffeaa7;
+    border-radius: 4px;
+    padding: 12px;
+    margin-bottom: 20px;
+}
+
+.batch-parse-instructions p {
+    margin: 0;
+    color: #856404;
+    font-size: 14px;
+}
+
+.batch-parse-table-container {
+    max-height: 400px;
+    overflow-y: auto;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+.batch-parse-table {
+    width: 100%;
+    border-collapse: collapse;
+    background-color: #fff;
+}
+
+.batch-parse-table th {
+    background-color: #f8f9fa;
+    border: 1px solid #ddd;
+    padding: 12px 8px;
+    text-align: center;
+    font-weight: 600;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.batch-parse-table td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: center;
+    vertical-align: middle;
+}
+
+.batch-parse-table input {
+    width: 100%;
+    border: none;
+    outline: none;
+    text-align: center;
+    font-size: 14px;
+    padding: 4px;
+}
+
+.batch-parse-table input:focus {
+    background-color: #f0f8ff;
+    border: 1px solid #3498db;
+}
+
+.batch-parse-table .material-name {
+    background-color: #f8f9fa;
+    font-weight: 500;
+    text-align: left;
+    padding-left: 12px;
+}
+
+/* 只读输入框样式 */
+input[readonly] {
+    background-color: #f8f9fa !important;
+    color: #6c757d;
+    cursor: not-allowed;
+}
+
+input[readonly]:focus {
+    background-color: #f8f9fa !important;
+    border-color: #ced4da;
+    box-shadow: none;
 }
 
 .upload-area {

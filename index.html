@@ -88,6 +88,69 @@
                     </select>
                 </div>
                 <div class="filter-item">
+                    <label>商品一级品类</label>
+                    <select>
+                        <option value="">请选择商品一级品类</option>
+                        <option value="clothing">服装</option>
+                        <option value="shoes">鞋靴</option>
+                        <option value="bags">箱包</option>
+                        <option value="accessories">配饰</option>
+                        <option value="beauty">美妆</option>
+                        <option value="digital">数码</option>
+                        <option value="home">家居</option>
+                        <option value="food">食品</option>
+                    </select>
+                </div>
+                <div class="filter-item">
+                    <label>是否已分配设计师</label>
+                    <select>
+                        <option value="">请选择分配状态</option>
+                        <option value="assigned">已分配</option>
+                        <option value="unassigned">未分配</option>
+                    </select>
+                </div>
+                <div class="filter-item">
+                    <label>期望交付时间</label>
+                    <div class="time-range">
+                        <input type="datetime-local" id="expectedStartTime" placeholder="开始时间">
+                        <span class="time-separator">至</span>
+                        <input type="datetime-local" id="expectedEndTime" placeholder="结束时间">
+                    </div>
+                </div>
+            </div>
+            <div class="filter-row">
+                <div class="filter-item">
+                    <label>创意策略标签</label>
+                    <select>
+                        <option value="">请选择创意策略标签</option>
+                        <option value="要素齐全">要素齐全</option>
+                        <option value="无价格">无价格</option>
+                        <option value="弱化价格">弱化价格</option>
+                        <option value="价差大">价差大</option>
+                        <option value="无文本">无文本</option>
+                        <option value="仅slogan">仅slogan</option>
+                        <option value="商品表达">商品表达</option>
+                        <option value="平台心智">平台心智</option>
+                        <option value="通用促购">通用促购</option>
+                        <option value="多品主题">多品主题</option>
+                        <option value="情绪营销">情绪营销</option>
+                        <option value="突出价格">突出价格</option>
+                        <option value="突出平台心智">突出平台心智</option>
+                        <option value="突出利益点">突出利益点</option>
+                        <option value="突出折扣">突出折扣</option>
+                        <option value="突出商品">突出商品</option>
+                        <option value="实拍合集-九宫格">实拍合集-九宫格</option>
+                        <option value="实拍合集-平铺">实拍合集-平铺</option>
+                        <option value="实拍合集-手持">实拍合集-手持</option>
+                        <option value="实拍合集-上身">实拍合集-上身</option>
+                        <option value="大单品—实拍单品">大单品—实拍单品</option>
+                        <option value="大单品-商详展示">大单品-商详展示</option>
+                        <option value="大单品-订单展示">大单品-订单展示</option>
+                        <option value="大单品-比价图">大单品-比价图</option>
+                        <option value="海报合集-n宫格">海报合集-n宫格</option>
+                    </select>
+                </div>
+                <div class="filter-item">
                     <label></label>
                     <div class="filter-buttons">
                         <button class="btn btn-primary" onclick="queryData()">查询</button>
@@ -130,8 +193,10 @@
                             <th>素材数量</th>
                             <th>素材尺寸</th>
                             <th>商品ID</th>
+                            <th>商品一级品类</th>
                             <th>应用场景</th>
                             <th>创意策略标签</th>
+                            <th>需求备注</th>
                             <th>重新生成建议</th>
                             <th width="180">操作</th>
                         </tr>
@@ -169,7 +234,7 @@
                         </div>
                         <div class="form-group">
                             <label>分配素材数量</label>
-                            <input type="number" class="material-quantity" value="1" min="1">
+                            <input type="number" class="material-quantity" value="1" min="1" readonly>
                         </div>
                     </div>
                 </div>
@@ -195,7 +260,7 @@
             </div>
             <div class="modal-body">
                 <!-- 上传区域 -->
-                <div class="upload-area">
+                <div class="upload-area" id="uploadArea">
                     <div class="upload-zone" id="uploadZone">
                         <div class="upload-instructions">
                             <p>点击上传文件,最多支持20条素材(图片或视频)</p>
@@ -206,14 +271,82 @@
                     </div>
                 </div>
                 
-                <!-- 素材列表 -->
-                <div class="materials-list" id="materialsList">
-                    <!-- 素材项将通过JavaScript动态生成 -->
+                <!-- 素材配置区域 -->
+                <div class="materials-config-wrapper" id="materialsConfigContainer" style="display: none;">
+                    <!-- 顶部按钮区域 -->
+                    <div class="materials-config-header">
+                        <!-- 批量解析按钮 -->
+                        <div class="batch-parse-section">
+                            <button class="btn btn-primary" onclick="openBatchParseModal()">
+                                <i class="fas fa-tags"></i> 批量素材解析
+                            </button>
+                        </div>
+                        
+                        <!-- 继续上传按钮 -->
+                        <div class="continue-upload-section" id="continueUploadSection" style="display: none;">
+                            <button class="btn btn-primary" onclick="showUploadArea()">
+                                <i class="fas fa-plus"></i> 继续上传
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- 素材配置容器 -->
+                    <div class="materials-config-container">
+                        <!-- 左侧导航列表 -->
+                        <div class="material-nav-list" id="materialNavList">
+                            <!-- 导航项将通过JavaScript动态生成 -->
+                        </div>
+                        
+                        <!-- 右侧素材列表 -->
+                        <div class="materials-list" id="materialsList">
+                            <!-- 素材项将通过JavaScript动态生成 -->
+                        </div>
+                    </div>
                 </div>
             </div>
             <div class="modal-footer">
                 <button class="btn btn-primary" onclick="confirmUpload()">确认上传</button>
                 <button class="btn btn-secondary" onclick="closeModal('uploadModal')">取消</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 批量解析弹窗 -->
+    <div id="batchParseModal" class="modal">
+        <div class="modal-content batch-parse-modal-content">
+            <div class="modal-header">
+                <h3>批量素材解析</h3>
+                <span class="close" onclick="closeModal('batchParseModal')">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="batch-parse-instructions">
+                    <p>请将上传素材名称对应的二级标签复制到表格中，每列一个标签。系统将自动解析标签。</p>
+                </div>
+                <div class="batch-parse-table-container">
+                    <table id="batchParseTable" class="batch-parse-table">
+                        <thead>
+                            <tr>
+                                <th width="60">序号</th>
+                                <th width="200">素材名称</th>
+                                <th width="120">标签1</th>
+                                <th width="120">标签2</th>
+                                <th width="120">标签3</th>
+                                <th width="120">标签4</th>
+                                <th width="120">标签5</th>
+                                <th width="120">标签6</th>
+                            </tr>
+                        </thead>
+                        <tbody id="batchParseTableBody">
+                            <!-- 表格内容将通过JavaScript动态生成 -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" onclick="parseBatchTags()">
+                    <i class="fas fa-magic"></i> 解析
+                </button>
+                <button class="btn btn-secondary" onclick="closeModal('batchParseModal')">取消</button>
             </div>
         </div>
     </div>

@@ -10,6 +10,7 @@ const mockData = [
         id: 1,
         createTime: '2024-01-15 10:30:00',
         expectedTime: '2024-01-20 18:00:00',
+        expectedHours: 120,
         submitter: '138****1234',
         designer: 'AIGC',
         status: 'generating',
@@ -23,14 +24,17 @@ const mockData = [
         materialQuantity: 3,
         materialSize: '1280x720',
         productId: 'PROD001',
+        productCategory: '服装',
         applicationScenario: '日常',
-        creativeStrategyTag: '时尚',
+        creativeStrategyTag: '突出商品',
+        requirementNote: '需要突出产品质感',
         regenerationSuggestion: ''
     },
     {
         id: 2,
         createTime: '2024-01-15 09:15:00',
         expectedTime: '2024-01-18 18:00:00',
+        expectedHours: 72,
         submitter: '139****5678',
         designer: '',
         status: 'unassigned', // 待分配设计师
@@ -44,14 +48,17 @@ const mockData = [
         materialQuantity: 5,
         materialSize: '1920x1080',
         productId: 'PROD002,PROD003',
+        productCategory: '美妆',
         applicationScenario: '促销',
-        creativeStrategyTag: '清新',
+        creativeStrategyTag: '情绪营销',
+        requirementNote: '突出产品功效',
         regenerationSuggestion: ''
     },
     {
         id: 3,
         createTime: '2024-01-14 16:45:00',
         expectedTime: '2024-01-17 18:00:00',
+        expectedHours: 72,
         submitter: '137****9012',
         designer: 'OA001',
         status: 'pending',
@@ -65,14 +72,17 @@ const mockData = [
         materialQuantity: 2,
         materialSize: '1080x1920',
         productId: 'PROD004',
+        productCategory: '数码',
         applicationScenario: '节日',
-        creativeStrategyTag: '科技',
+        creativeStrategyTag: '突出价格',
+        requirementNote: '突出科技感',
         regenerationSuggestion: '建议增加更多产品细节'
     },
     {
         id: 4,
         createTime: '2024-01-14 14:20:00',
         expectedTime: '20244-01-16 18:00:00',
+        expectedHours: 48,
         submitter: '136****3456',
         designer: '',
         status: 'unassigned', // 待分配设计师
@@ -86,14 +96,17 @@ const mockData = [
         materialQuantity: 4,
         materialSize: '1280x720',
         productId: 'PROD005,PROD006,PROD007',
+        productCategory: '食品',
         applicationScenario: '日常',
-        creativeStrategyTag: '美味',
+        creativeStrategyTag: '突出折扣',
+        requirementNote: '突出美食诱惑',
         regenerationSuggestion: '需要更吸引人的视觉效果'
     },
     {
         id: 5,
         createTime: '2024-01-13 11:30:00',
         expectedTime: '2024-01-15 18:00:00',
+        expectedHours: 48,
         submitter: '135****7890',
         designer: 'AIGC',
         status: 'completed',
@@ -107,8 +120,10 @@ const mockData = [
         materialQuantity: 6,
         materialSize: '1920x1080',
         productId: 'PROD008',
+        productCategory: '家居',
         applicationScenario: '促销',
-        creativeStrategyTag: '温馨',
+        creativeStrategyTag: '多品主题',
+        requirementNote: '营造温馨氛围',
         regenerationSuggestion: '',
         subTasks: [
             { designer: 'OA001', status: 'completed', materialQuantity: 2 },
@@ -120,6 +135,7 @@ const mockData = [
         id: 6,
         createTime: '2024-01-16 14:20:00',
         expectedTime: '2024-01-19 18:00:00',
+        expectedHours: 72,
         submitter: '134****5678',
         designer: 'OA002',
         status: 'generating',
@@ -133,8 +149,10 @@ const mockData = [
         materialQuantity: 2,
         materialSize: '快手PD；网易PD；百度PD视频',
         productId: 'PROD009',
+        productCategory: '配饰',
         applicationScenario: '日常',
-        creativeStrategyTag: '科技',
+        creativeStrategyTag: '实拍合集-九宫格',
+        requirementNote: '突出时尚感',
         regenerationSuggestion: ''
     }
 ];
@@ -213,8 +231,10 @@ function renderTable() {
             <td>${task.materialQuantity}</td>
             <td>${formatMaterialSize(task.materialSize, task.channel)}</td>
             <td>${task.productId}</td>
+            <td>${task.productCategory}</td>
             <td>${task.applicationScenario}</td>
             <td>${task.creativeStrategyTag}</td>
+            <td>${task.requirementNote || '-'}</td>
             <td>${task.regenerationSuggestion || '-'}</td>
             <td>
                 <div class="operation-buttons">
@@ -419,13 +439,18 @@ function queryData() {
         startTime: document.getElementById('startTime').value,
         endTime: document.getElementById('endTime').value,
         submitter: document.querySelector('input[placeholder="请输入提单人手机号"]').value,
-        designer: document.querySelector('select option:checked').value,
+        designer: document.querySelectorAll('select')[0].value,
         status: document.querySelectorAll('select')[1].value,
         generationId: document.querySelector('input[placeholder="请输入生成ID"]').value,
         generationType: document.querySelectorAll('select')[2].value,
         channel: document.querySelectorAll('select')[3].value,
         productId: document.querySelector('input[placeholder="请输入商品ID"]').value,
-        applicationScenario: document.querySelectorAll('select')[4].value
+        applicationScenario: document.querySelectorAll('select')[4].value,
+        productCategory: document.querySelectorAll('select')[5].value,
+        assignmentStatus: document.querySelectorAll('select')[6].value,
+        expectedStartTime: document.getElementById('expectedStartTime').value,
+        expectedEndTime: document.getElementById('expectedEndTime').value,
+        creativeStrategyTag: document.querySelectorAll('select')[7].value
     };
 
     // 应用筛选
@@ -460,6 +485,25 @@ function queryData() {
         }
         if (filters.productId && !task.productId.includes(filters.productId)) return false;
         if (filters.applicationScenario && task.applicationScenario !== filters.applicationScenario) return false;
+        if (filters.productCategory && task.productCategory !== filters.productCategory) return false;
+        if (filters.assignmentStatus) {
+            const isAssigned = task.designer && task.designer !== '';
+            if (filters.assignmentStatus === 'assigned' && !isAssigned) return false;
+            if (filters.assignmentStatus === 'unassigned' && isAssigned) return false;
+        }
+        // 期望交付时间范围筛选
+        if (filters.expectedStartTime || filters.expectedEndTime) {
+            const taskExpectedTime = new Date(task.expectedTime);
+            if (filters.expectedStartTime) {
+                const startTime = new Date(filters.expectedStartTime);
+                if (taskExpectedTime < startTime) return false;
+            }
+            if (filters.expectedEndTime) {
+                const endTime = new Date(filters.expectedEndTime);
+                if (taskExpectedTime > endTime) return false;
+            }
+        }
+        if (filters.creativeStrategyTag && task.creativeStrategyTag !== filters.creativeStrategyTag) return false;
         return true;
     });
 
@@ -513,6 +557,21 @@ function assignDesigner(taskId = null) {
         window.currentAssignTaskId = taskId;
         const task = taskData.find(t => t.id === taskId);
         
+        // 设置素材数量
+        const quantityInput = document.querySelector('.material-quantity');
+        if (quantityInput && task) {
+            quantityInput.value = task.materialQuantity;
+            
+            // 根据生成类型设置是否可编辑
+            if (task.generationType === '单品多视频') {
+                quantityInput.removeAttribute('readonly');
+                quantityInput.style.backgroundColor = '#fff';
+            } else {
+                quantityInput.setAttribute('readonly', true);
+                quantityInput.style.backgroundColor = '#f8f9fa';
+            }
+        }
+        
         // 根据生成类型调整弹窗内容
         if (task && task.generationType !== '单品多视频') {
             // 单品单图、单品多图、单品单视频只允许一个设计师
@@ -528,10 +587,30 @@ function assignDesigner(taskId = null) {
             }
         }
     } else {
-        // 批量分配时显示添加按钮
+        // 批量分配
+        const selectedTaskIds = selectedTasks;
+        const selectedTaskData = taskData.filter(t => selectedTaskIds.includes(t.id));
+        
+        // 检查是否包含单品多视频任务
+        const hasMultiVideoTask = selectedTaskData.some(task => task.generationType === '单品多视频');
+        
+        if (hasMultiVideoTask) {
+            alert('单品多视频任务不支持多选分配，请单独分配');
+            return;
+        }
+        
+        // 批量分配时只允许一个设计师，素材数量为所有任务的总和
+        const totalQuantity = selectedTaskData.reduce((sum, task) => sum + task.materialQuantity, 0);
+        const quantityInput = document.querySelector('.material-quantity');
+        if (quantityInput) {
+            quantityInput.value = totalQuantity;
+            quantityInput.setAttribute('readonly', true);
+            quantityInput.style.backgroundColor = '#f8f9fa';
+        }
+        
         const addButton = document.querySelector('.add-assignment');
         if (addButton) {
-            addButton.style.display = 'block';
+            addButton.style.display = 'none';
         }
     }
     document.getElementById('assignModal').style.display = 'block';
@@ -542,6 +621,16 @@ function addAssignmentEntry() {
     const assignmentEntries = document.getElementById('assignmentEntries');
     const newEntry = document.createElement('div');
     newEntry.className = 'assignment-entry';
+    
+    // 获取当前任务的素材数量
+    let materialQuantity = 1;
+    if (window.currentAssignTaskId) {
+        const task = taskData.find(t => t.id === window.currentAssignTaskId);
+        if (task) {
+            materialQuantity = task.materialQuantity;
+        }
+    }
+    
     newEntry.innerHTML = `
         <div class="form-group">
             <label>选择设计师OA</label>
@@ -556,7 +645,7 @@ function addAssignmentEntry() {
         </div>
         <div class="form-group">
             <label>分配素材数量</label>
-            <input type="number" class="material-quantity" value="1" min="1">
+            <input type="number" class="material-quantity" value="${materialQuantity}" min="1" readonly style="background-color: #f8f9fa;">
         </div>
         <button class="btn btn-danger" onclick="removeAssignmentEntry(this)" style="margin-left: 10px;">
             <i class="fas fa-trash"></i>
@@ -636,8 +725,12 @@ function confirmAssign() {
             alert(`${task.generationType}只允许分配一个设计师`);
             return;
         }
-        
-        // 分配设计师
+    }
+    
+    // 分配设计师
+    if (window.currentAssignTaskId) {
+        // 单个任务分配
+        const task = taskData.find(t => t.id === window.currentAssignTaskId);
         if (task.generationType === '单品多视频') {
             // 单品多视频支持多个设计师
             task.subTasks = assignments.map(assignment => ({
@@ -664,7 +757,19 @@ function confirmAssign() {
         window.currentAssignTaskId = null;
     } else {
         // 批量分配
-        selectedTasks.forEach(taskId => {
+        const selectedTaskIds = selectedTasks;
+        const selectedTaskData = taskData.filter(t => selectedTaskIds.includes(t.id));
+        
+        // 检查是否包含单品多视频任务
+        const hasMultiVideoTask = selectedTaskData.some(task => task.generationType === '单品多视频');
+        
+        if (hasMultiVideoTask) {
+            alert('单品多视频任务不支持多选分配，请单独分配');
+            return;
+        }
+        
+        // 批量分配所有任务给同一个设计师
+        selectedTaskIds.forEach(taskId => {
             const task = taskData.find(t => t.id === taskId);
             if (task) {
                 const firstAssignment = assignments[0];
@@ -754,11 +859,192 @@ function openImageCreation(taskId) {
 
 // 打开上传素材弹窗
 function openUploadModal(taskId) {
-    document.getElementById('uploadModal').style.display = 'block';
-    document.getElementById('uploadModal').dataset.taskId = taskId;
-    uploadedMaterials = []; // 清空素材列表
+    window.currentTaskId = taskId;
+    uploadedMaterials = [];
     renderMaterialsList();
     setupUploadZone();
+    
+    // 重置上传模态框状态
+    document.getElementById('uploadArea').style.display = 'block';
+    document.getElementById('materialsConfigContainer').style.display = 'none';
+    document.getElementById('continueUploadSection').style.display = 'none';
+    
+    document.getElementById('uploadModal').style.display = 'block';
+}
+
+// 打开批量解析弹窗
+function openBatchParseModal() {
+    if (uploadedMaterials.length === 0) {
+        alert('请先上传素材');
+        return;
+    }
+    
+    renderBatchParseTable();
+    document.getElementById('batchParseModal').style.display = 'block';
+}
+
+// 渲染批量解析表格
+function renderBatchParseTable() {
+    const tbody = document.getElementById('batchParseTableBody');
+    tbody.innerHTML = '';
+    
+    uploadedMaterials.forEach((material, index) => {
+        const row = document.createElement('tr');
+        
+        // 获取已有的标签
+        const existingTags = material.selectedTags || [];
+        
+        row.innerHTML = `
+            <td>${index + 1}</td>
+            <td class="material-name">${material.name}</td>
+            <td><input type="text" class="tag-input" data-material-id="${material.id}" data-tag-index="0" placeholder="标签1" value="${existingTags[0] || ''}"></td>
+            <td><input type="text" class="tag-input" data-material-id="${material.id}" data-tag-index="1" placeholder="标签2" value="${existingTags[1] || ''}"></td>
+            <td><input type="text" class="tag-input" data-material-id="${material.id}" data-tag-index="2" placeholder="标签3" value="${existingTags[2] || ''}"></td>
+            <td><input type="text" class="tag-input" data-material-id="${material.id}" data-tag-index="3" placeholder="标签4" value="${existingTags[3] || ''}"></td>
+            <td><input type="text" class="tag-input" data-material-id="${material.id}" data-tag-index="4" placeholder="标签5" value="${existingTags[4] || ''}"></td>
+            <td><input type="text" class="tag-input" data-material-id="${material.id}" data-tag-index="5" placeholder="标签6" value="${existingTags[5] || ''}"></td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+// 解析批量标签
+function parseBatchTags() {
+    const tagInputs = document.querySelectorAll('.tag-input');
+    const tagData = {};
+    
+    // 收集所有标签数据
+    tagInputs.forEach(input => {
+        const materialId = input.getAttribute('data-material-id');
+        const tagIndex = parseInt(input.getAttribute('data-tag-index'));
+        const tagValue = input.value.trim();
+        
+        if (!tagData[materialId]) {
+            tagData[materialId] = [];
+        }
+        
+        if (tagValue) {
+            tagData[materialId][tagIndex] = tagValue;
+        }
+    });
+    
+    // 更新素材的标签
+    Object.keys(tagData).forEach(materialId => {
+        const material = uploadedMaterials.find(m => m.id === materialId);
+        if (material) {
+            // 过滤掉空标签
+            const parsedTags = tagData[materialId].filter(tag => tag && tag.trim());
+            material.tags = parsedTags;
+            
+            // 将解析的标签添加到selectedTags中，用于显示选中状态
+            parsedTags.forEach(tag => {
+                if (!material.selectedTags.includes(tag)) {
+                    material.selectedTags.push(tag);
+                }
+            });
+            
+            updateMaterialStatusIndicator(materialId);
+        }
+    });
+    
+    // 重新渲染素材列表
+    renderMaterialsList();
+    
+    // 关闭弹窗
+    closeModal('batchParseModal');
+    
+    alert('批量标签解析完成！');
+}
+
+// 创建素材导航元素
+function createMaterialNavElement(material, index) {
+    const div = document.createElement('div');
+    div.className = 'material-nav-item';
+    div.onclick = () => scrollToMaterial(index);
+    
+    // 获取文件尺寸信息
+    const size = material.size ? formatFileSize(material.size) : '';
+    const dimensions = material.dimensions || '';
+    
+    div.innerHTML = `
+        <div class="material-status-indicator ${isMaterialConfigured(material.id) ? 'configured' : ''}"></div>
+        <div class="material-nav-title">${material.name}</div>
+        <div class="material-nav-info">${dimensions} ${size}</div>
+    `;
+    
+    return div;
+}
+
+// 滚动到指定素材
+function scrollToMaterial(index) {
+    const materialsList = document.getElementById('materialsList');
+    const materialElements = materialsList.querySelectorAll('.material-item');
+    
+    if (materialElements[index]) {
+        materialElements[index].scrollIntoView({ behavior: 'smooth', block: 'start' });
+        
+        // 添加临时高亮效果
+        materialElements[index].style.backgroundColor = '#e3f2fd';
+        setTimeout(() => {
+            materialElements[index].style.backgroundColor = '';
+        }, 2000);
+        
+        setActiveMaterial(index);
+    }
+}
+
+// 设置活跃素材
+function setActiveMaterial(index) {
+    const navItems = document.querySelectorAll('.material-nav-item');
+    navItems.forEach((item, i) => {
+        if (i === index) {
+            item.classList.add('active');
+        } else {
+            item.classList.remove('active');
+        }
+    });
+}
+
+// 检查素材是否已配置
+function isMaterialConfigured(materialId) {
+    const material = uploadedMaterials.find(m => m.id === materialId);
+    if (!material) return false;
+    
+    return (material.selectedTags && material.selectedTags.length > 0) ||
+           (material.selectedProducts && material.selectedProducts.length > 0) ||
+           (material.textTags && material.textTags.trim() !== '') ||
+           (material.tags && material.tags.length > 0);
+}
+
+// 更新素材状态指示器
+function updateMaterialStatusIndicator(materialId) {
+    const navItem = document.querySelector(`.material-nav-item[onclick*="${materialId}"]`);
+    if (navItem) {
+        const indicator = navItem.querySelector('.material-status-indicator');
+        if (indicator) {
+            if (isMaterialConfigured(materialId)) {
+                indicator.classList.add('configured');
+            } else {
+                indicator.classList.remove('configured');
+            }
+        }
+    }
+}
+
+// 格式化文件大小
+function formatFileSize(bytes) {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}
+
+// 显示上传区域
+function showUploadArea() {
+    document.getElementById('materialsConfigContainer').style.display = 'none';
+    document.getElementById('continueUploadSection').style.display = 'none';
+    document.getElementById('uploadArea').style.display = 'block';
 }
 
 // 设置上传区域
@@ -824,22 +1110,46 @@ function addMaterial(file) {
         selectedTags: [],
         textTags: '',
         parsedTags: [],
-        selectedProducts: []
+        selectedProducts: [],
+        tags: []
     };
     
     uploadedMaterials.push(material);
     renderMaterialsList();
+    
+    // 如果是第一个素材，切换到配置模式
+    if (uploadedMaterials.length === 1) {
+        document.getElementById('uploadArea').style.display = 'none';
+        document.getElementById('materialsConfigContainer').style.display = 'flex';
+        document.getElementById('continueUploadSection').style.display = 'block';
+    }
 }
 
 // 渲染素材列表
 function renderMaterialsList() {
     const materialsList = document.getElementById('materialsList');
+    const materialNavList = document.getElementById('materialNavList');
+    
     materialsList.innerHTML = '';
+    materialNavList.innerHTML = '';
     
     uploadedMaterials.forEach((material, index) => {
         const materialElement = createMaterialElement(material, index);
         materialsList.appendChild(materialElement);
+        
+        const navElement = createMaterialNavElement(material, index);
+        materialNavList.appendChild(navElement);
     });
+    
+    // 更新所有素材的标签按钮状态
+    uploadedMaterials.forEach(material => {
+        updateTagButtons(material.id);
+    });
+    
+    // 如果有素材，设置第一个为活跃状态
+    if (uploadedMaterials.length > 0) {
+        setActiveMaterial(0);
+    }
 }
 
 // 创建素材元素
@@ -1003,6 +1313,16 @@ function getFileInfo(file) {
 function deleteMaterial(materialId) {
     uploadedMaterials = uploadedMaterials.filter(m => m.id !== materialId);
     renderMaterialsList();
+    
+    // 如果没有素材了，显示上传区域
+    if (uploadedMaterials.length === 0) {
+        document.getElementById('uploadArea').style.display = 'block';
+        document.getElementById('materialsConfigContainer').style.display = 'none';
+        document.getElementById('continueUploadSection').style.display = 'none';
+    } else {
+        // 设置第一个素材为活跃状态
+        setActiveMaterial(0);
+    }
 }
 
 // 更新素材名称
@@ -1025,6 +1345,7 @@ function toggleTag(materialId, tag) {
             material.selectedTags.push(tag);
         }
         updateTagButtons(materialId);
+        updateMaterialStatusIndicator(materialId);
     }
 }
 
@@ -1062,6 +1383,7 @@ function updateTextTags(materialId, text) {
     if (material) {
         material.textTags = text;
         updateCharCount(materialId, 'text', text.length);
+        updateMaterialStatusIndicator(materialId);
     }
 }
 
@@ -1114,6 +1436,7 @@ function toggleProduct(materialId, productId) {
             material.selectedProducts.push(productId);
         }
         updateProductItems(materialId);
+        updateMaterialStatusIndicator(materialId);
     }
 }
 
@@ -1187,6 +1510,10 @@ function closeModal(modalId) {
     if (modalId === 'uploadModal') {
         document.getElementById('materialFiles').value = '';
         document.getElementById('uploadPreview').innerHTML = '';
+        // 重置上传模态框状态
+        document.getElementById('uploadArea').style.display = 'block';
+        document.getElementById('materialsConfigContainer').style.display = 'none';
+        document.getElementById('continueUploadSection').style.display = 'none';
     } else if (modalId === 'assignModal') {
         // 重置分配设计师弹窗
         const assignmentEntries = document.getElementById('assignmentEntries');
@@ -1205,7 +1532,7 @@ function closeModal(modalId) {
                 </div>
                 <div class="form-group">
                     <label>分配素材数量</label>
-                    <input type="number" class="material-quantity" value="1" min="1">
+                    <input type="number" class="material-quantity" value="1" min="1" readonly>
                 </div>
             </div>
         `;
