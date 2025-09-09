@@ -121,34 +121,84 @@
             <div class="filter-row">
                 <div class="filter-item">
                     <label>创意策略标签</label>
-                    <select>
-                        <option value="">请选择创意策略标签</option>
-                        <option value="要素齐全">要素齐全</option>
-                        <option value="无价格">无价格</option>
-                        <option value="弱化价格">弱化价格</option>
-                        <option value="价差大">价差大</option>
-                        <option value="无文本">无文本</option>
-                        <option value="仅slogan">仅slogan</option>
-                        <option value="商品表达">商品表达</option>
-                        <option value="平台心智">平台心智</option>
-                        <option value="通用促购">通用促购</option>
-                        <option value="多品主题">多品主题</option>
-                        <option value="情绪营销">情绪营销</option>
-                        <option value="突出价格">突出价格</option>
-                        <option value="突出平台心智">突出平台心智</option>
-                        <option value="突出利益点">突出利益点</option>
-                        <option value="突出折扣">突出折扣</option>
-                        <option value="突出商品">突出商品</option>
-                        <option value="实拍合集-九宫格">实拍合集-九宫格</option>
-                        <option value="实拍合集-平铺">实拍合集-平铺</option>
-                        <option value="实拍合集-手持">实拍合集-手持</option>
-                        <option value="实拍合集-上身">实拍合集-上身</option>
-                        <option value="大单品—实拍单品">大单品—实拍单品</option>
-                        <option value="大单品-商详展示">大单品-商详展示</option>
-                        <option value="大单品-订单展示">大单品-订单展示</option>
-                        <option value="大单品-比价图">大单品-比价图</option>
-                        <option value="海报合集-n宫格">海报合集-n宫格</option>
-                    </select>
+                    <div class="multi-select-dropdown" id="creativeStrategyDropdown">
+                        <div class="dropdown-header" onclick="toggleCreativeStrategyDropdown()">
+                            <span class="selected-text">请选择创意策略标签</span>
+                            <i class="fas fa-chevron-down"></i>
+                        </div>
+                        <div class="dropdown-content" id="creativeStrategyContent" style="display: none;">
+                            <div class="dropdown-section">
+                                <div class="section-title">素材样式</div>
+                                <div class="section-options">
+                                    <label><input type="checkbox" value="横图"> 横图</label>
+                                    <label><input type="checkbox" value="竖图"> 竖图</label>
+                                    <label><input type="checkbox" value="单图"> 单图</label>
+                                    <label><input type="checkbox" value="多图6"> 多图6</label>
+                                    <label><input type="checkbox" value="多图3"> 多图3</label>
+                                    <label><input type="checkbox" value="多图4"> 多图4</label>
+                                    <label><input type="checkbox" value="橱图"> 橱图</label>
+                                    <label><input type="checkbox" value="抖音图文"> 抖音图文</label>
+                                    <label><input type="checkbox" value="多图9"> 多图9</label>
+                                    <label><input type="checkbox" value="商品方图"> 商品方图</label>
+                                    <label><input type="checkbox" value="开屏"> 开屏</label>
+                                    <label><input type="checkbox" value="多图"> 多图</label>
+                                    <label><input type="checkbox" value="组图"> 组图</label>
+                                </div>
+                            </div>
+                            <div class="dropdown-section">
+                                <div class="section-title">商品框个数</div>
+                                <div class="section-options">
+                                    <label><input type="checkbox" value="单框"> 单框</label>
+                                    <label><input type="checkbox" value="双框"> 双框</label>
+                                    <label><input type="checkbox" value="三框"> 三框</label>
+                                    <label><input type="checkbox" value="四框"> 四框</label>
+                                    <label><input type="checkbox" value="六框"> 六框</label>
+                                    <label><input type="checkbox" value="九框"> 九框</label>
+                                    <label><input type="checkbox" value="无框"> 无框</label>
+                                </div>
+                            </div>
+                            <div class="dropdown-section">
+                                <div class="section-title">商品框形状</div>
+                                <div class="section-options">
+                                    <label><input type="checkbox" value="方形"> 方形</label>
+                                    <label><input type="checkbox" value="圆形"> 圆形</label>
+                                    <label><input type="checkbox" value="异形"> 异形</label>
+                                    <label><input type="checkbox" value="圆角矩形"> 圆角矩形</label>
+                                    <label><input type="checkbox" value="无"> 无</label>
+                                </div>
+                            </div>
+                            <div class="dropdown-section">
+                                <div class="section-title">商品展示</div>
+                                <div class="section-options">
+                                    <label><input type="checkbox" value="抠图商品"> 抠图商品</label>
+                                    <label><input type="checkbox" value="场景图"> 场景图</label>
+                                    <label><input type="checkbox" value="商品特写"> 商品特写</label>
+                                    <label><input type="checkbox" value="白底图"> 白底图</label>
+                                    <label><input type="checkbox" value="模板图"> 模板图</label>
+                                    <label><input type="checkbox" value="原生图"> 原生图</label>
+                                    <label><input type="checkbox" value="实拍图"> 实拍图</label>
+                                    <label><input type="checkbox" value="纯色模特图"> 纯色模特图</label>
+                                    <label><input type="checkbox" value="纯色商品图"> 纯色商品图</label>
+                                    <label><input type="checkbox" value="场景模特图"> 场景模特图</label>
+                                    <label><input type="checkbox" value="场景商品图"> 场景商品图</label>
+                                </div>
+                            </div>
+                            <div class="dropdown-section">
+                                <div class="section-title">色调</div>
+                                <div class="section-options">
+                                    <label><input type="checkbox" value="唯品红"> 唯品红</label>
+                                    <label><input type="checkbox" value="蓝色"> 蓝色</label>
+                                    <label><input type="checkbox" value="黄色"> 黄色</label>
+                                    <label><input type="checkbox" value="绿色"> 绿色</label>
+                                    <label><input type="checkbox" value="紫色"> 紫色</label>
+                                </div>
+                            </div>
+                            <div class="dropdown-footer">
+                                <button class="btn btn-primary btn-sm" onclick="applyCreativeStrategyFilter()">确定</button>
+                                <button class="btn btn-secondary btn-sm" onclick="clearCreativeStrategyFilter()">清除</button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 <div class="filter-item">
                     <label></label>
@@ -192,8 +242,8 @@
                             <th>商品数量</th>
                             <th>素材数量</th>
                             <th>素材尺寸</th>
-                            <th>商品ID</th>
-                            <th>商品一级品类</th>
+                            <th>商品ID/等级</th>
+                            <th>品类</th>
                             <th>应用场景</th>
                             <th>创意策略标签</th>
                             <th>需求备注</th>

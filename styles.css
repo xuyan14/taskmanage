@@ -633,6 +633,166 @@ input[readonly]:focus {
     box-shadow: none;
 }
 
+/* 多选下拉框样式 */
+.multi-select-dropdown {
+    position: relative;
+    width: 100%;
+}
+
+.dropdown-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background-color: white;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.dropdown-header:hover {
+    border-color: #3498db;
+}
+
+.dropdown-header i {
+    transition: transform 0.2s;
+}
+
+.dropdown-header.active i {
+    transform: rotate(180deg);
+}
+
+.dropdown-content {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background-color: white;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    z-index: 1000;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.dropdown-section {
+    border-bottom: 1px solid #f0f0f0;
+    padding: 12px;
+}
+
+.dropdown-section:last-child {
+    border-bottom: none;
+}
+
+.section-title {
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 8px;
+    font-size: 14px;
+}
+
+.section-options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.section-options label {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 13px;
+    color: #666;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 4px;
+    transition: background-color 0.2s;
+}
+
+.section-options label:hover {
+    background-color: #f8f9fa;
+}
+
+.section-options input[type="checkbox"] {
+    margin: 0;
+}
+
+.dropdown-footer {
+    display: flex;
+    justify-content: space-between;
+    padding: 12px;
+    border-top: 1px solid #f0f0f0;
+    background-color: #f8f9fa;
+}
+
+.dropdown-footer .btn-sm {
+    padding: 6px 12px;
+    font-size: 12px;
+}
+
+.selected-text {
+    color: #333;
+    font-size: 14px;
+}
+
+.selected-text.has-selection {
+    color: #3498db;
+    font-weight: 500;
+}
+
+/* 小红书详情展开行样式 */
+.xiaohongshu-detail-row {
+    background-color: #f8f9fa;
+}
+
+.xiaohongshu-detail-content {
+    padding: 12px 16px;
+    background-color: #f8f9fa;
+    border-left: 4px solid #ff6b6b;
+}
+
+.xiaohongshu-details {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: flex-start;
+}
+
+.detail-item {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 180px;
+    flex: 1;
+}
+
+.detail-label {
+    font-weight: 600;
+    color: #333;
+    font-size: 13px;
+}
+
+.detail-value {
+    color: #666;
+    font-size: 14px;
+    word-break: break-all;
+}
+
+.reference-link {
+    color: #3498db;
+    text-decoration: none;
+    border-bottom: 1px solid transparent;
+    transition: border-color 0.2s;
+}
+
+.reference-link:hover {
+    border-bottom-color: #3498db;
+    text-decoration: none;
+}
+
 .upload-area {
     margin-bottom: 20px;
 }

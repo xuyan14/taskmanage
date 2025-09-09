@@ -24,6 +24,7 @@ const mockData = [
         materialQuantity: 3,
         materialSize: '1280x720',
         productId: 'PROD001',
+        productLevel: '一级',
         productCategory: '服装',
         applicationScenario: '日常',
         creativeStrategyTag: '突出商品',
@@ -48,6 +49,7 @@ const mockData = [
         materialQuantity: 5,
         materialSize: '1920x1080',
         productId: 'PROD002,PROD003',
+        productLevel: '二级',
         productCategory: '美妆',
         applicationScenario: '促销',
         creativeStrategyTag: '情绪营销',
@@ -72,6 +74,7 @@ const mockData = [
         materialQuantity: 2,
         materialSize: '1080x1920',
         productId: 'PROD004',
+        productLevel: '三级',
         productCategory: '数码',
         applicationScenario: '节日',
         creativeStrategyTag: '突出价格',
@@ -96,6 +99,7 @@ const mockData = [
         materialQuantity: 4,
         materialSize: '1280x720',
         productId: 'PROD005,PROD006,PROD007',
+        productLevel: '一级',
         productCategory: '食品',
         applicationScenario: '日常',
         creativeStrategyTag: '突出折扣',
@@ -120,6 +124,7 @@ const mockData = [
         materialQuantity: 6,
         materialSize: '1920x1080',
         productId: 'PROD008',
+        productLevel: '二级',
         productCategory: '家居',
         applicationScenario: '促销',
         creativeStrategyTag: '多品主题',
@@ -149,11 +154,45 @@ const mockData = [
         materialQuantity: 2,
         materialSize: '快手PD；网易PD；百度PD视频',
         productId: 'PROD009',
+        productLevel: '三级',
         productCategory: '配饰',
         applicationScenario: '日常',
         creativeStrategyTag: '实拍合集-九宫格',
         requirementNote: '突出时尚感',
         regenerationSuggestion: ''
+    },
+    {
+        id: 7,
+        createTime: '2024-01-16 09:15:00',
+        expectedTime: '2024-01-17 12:00:00',
+        expectedHours: 27,
+        submitter: '13800138007',
+        designer: 'AIGC',
+        status: 'generating',
+        updateTime: '2024-01-16 10:30:00',
+        generationId: 'GEN007',
+        generationType: '单品单图',
+        channel: 'xiaohongshu',
+        materialSource: '系统生成',
+        templateCategory: '模板图',
+        productQuantity: 1,
+        materialQuantity: 1,
+        materialSize: '1080x1080',
+        productId: '6920832209174221771',
+        productLevel: '一级',
+        productCategory: '服装',
+        applicationScenario: '日常',
+        creativeStrategyTag: '突出商品',
+        requirementNote: 'ins风格穿搭推荐',
+        regenerationSuggestion: '',
+        // 小红书特有字段
+        xiaohongshuData: {
+            topic: 'ins风辣妹穿搭推荐',
+            coverText: 'ins风辣妹穿搭推荐',
+            contentText: 'ins风辣妹穿搭推荐',
+            searchKeywords: '小辣椒',
+            referenceLink: 'www.xiaohongshu.com'
+        }
     }
 ];
 
@@ -201,8 +240,10 @@ function renderTable() {
         }
 
         // 添加展开/收起按钮
-        const expandButton = task.generationType === '单品多视频' && task.subTasks && task.subTasks.length > 0 
-            ? `<button class="btn btn-sm btn-secondary expand-btn" onclick="toggleSubTasks(${task.id})" data-expanded="false">
+        const hasExpandableContent = (task.generationType === '单品多视频' && task.subTasks && task.subTasks.length > 0) || 
+                                   (task.channel === 'xiaohongshu' && task.xiaohongshuData);
+        const expandButton = hasExpandableContent 
+            ? `<button class="btn btn-sm btn-secondary expand-btn" onclick="toggleExpandableContent(${task.id})" data-expanded="false">
                  <i class="fas fa-chevron-down"></i>
                </button>` 
             : '';
@@ -224,13 +265,13 @@ function renderTable() {
             <td>${task.updateTime}</td>
             <td>${task.generationId}</td>
             <td>${task.generationType}</td>
-            <td>${task.channel}</td>
+            <td>${task.channel === 'xiaohongshu' ? '小红书' : task.channel}</td>
             <td>${task.materialSource}</td>
             <td>${task.templateCategory}</td>
             <td>${task.productQuantity}</td>
             <td>${task.materialQuantity}</td>
             <td>${formatMaterialSize(task.materialSize, task.channel)}</td>
-            <td>${task.productId}</td>
+            <td>${task.productId}/${task.productLevel}</td>
             <td>${task.productCategory}</td>
             <td>${task.applicationScenario}</td>
             <td>${task.creativeStrategyTag}</td>
@@ -270,6 +311,48 @@ function renderTable() {
                 
                 tbody.appendChild(subRow);
             });
+        }
+        
+        // 如果是小红书任务且有小红书数据，添加展开行（默认隐藏）
+        if (task.channel === 'xiaohongshu' && task.xiaohongshuData) {
+            const xiaohongshuRow = document.createElement('tr');
+            xiaohongshuRow.className = 'xiaohongshu-detail-row';
+            xiaohongshuRow.dataset.parentId = task.id;
+            xiaohongshuRow.style.display = 'none';
+            
+            xiaohongshuRow.innerHTML = `
+                <td></td>
+                <td colspan="19" class="xiaohongshu-detail-content">
+                    <div class="xiaohongshu-details">
+                        <div class="detail-item">
+                            <span class="detail-label">选题：</span>
+                            <span class="detail-value">${task.xiaohongshuData.topic}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">封面文案：</span>
+                            <span class="detail-value">${task.xiaohongshuData.coverText}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">内页文案：</span>
+                            <span class="detail-value">${task.xiaohongshuData.contentText}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">搜索词：</span>
+                            <span class="detail-value">${task.xiaohongshuData.searchKeywords}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">参考链接：</span>
+                            <span class="detail-value">
+                                <a href="https://${task.xiaohongshuData.referenceLink}" target="_blank" class="reference-link">
+                                    ${task.xiaohongshuData.referenceLink}
+                                </a>
+                            </span>
+                        </div>
+                    </div>
+                </td>
+            `;
+            
+            tbody.appendChild(xiaohongshuRow);
         }
     });
 
@@ -450,7 +533,7 @@ function queryData() {
         assignmentStatus: document.querySelectorAll('select')[6].value,
         expectedStartTime: document.getElementById('expectedStartTime').value,
         expectedEndTime: document.getElementById('expectedEndTime').value,
-        creativeStrategyTag: document.querySelectorAll('select')[7].value
+        creativeStrategyTags: selectedCreativeStrategyTags
     };
 
     // 应用筛选
@@ -473,15 +556,17 @@ function queryData() {
         if (filters.status && task.status !== filters.status) return false;
         if (filters.generationId && !task.generationId.includes(filters.generationId)) return false;
         if (filters.generationType && task.generationType !== filters.generationType) return false;
-        if (filters.channel && task.channel !== filters.channel) {
+        if (filters.channel) {
             // 处理渠道映射
             const channelMap = {
                 'douyin': '抖音',
-                'xiaohongshu': '小红书', 
+                'xiaohongshu': '小红书',
                 'wechat': '微信',
                 'vtd': 'VTD'
             };
-            if (task.channel !== channelMap[filters.channel]) return false;
+            const taskChannel = task.channel === 'xiaohongshu' ? '小红书' : task.channel;
+            const filterChannel = channelMap[filters.channel] || filters.channel;
+            if (taskChannel !== filterChannel) return false;
         }
         if (filters.productId && !task.productId.includes(filters.productId)) return false;
         if (filters.applicationScenario && task.applicationScenario !== filters.applicationScenario) return false;
@@ -503,7 +588,16 @@ function queryData() {
                 if (taskExpectedTime > endTime) return false;
             }
         }
-        if (filters.creativeStrategyTag && task.creativeStrategyTag !== filters.creativeStrategyTag) return false;
+        // 创意策略标签筛选（多选）
+        if (filters.creativeStrategyTags && filters.creativeStrategyTags.length > 0) {
+            // 检查任务是否包含任何一个选中的标签
+            const taskHasSelectedTag = filters.creativeStrategyTags.some(tag => 
+                task.creativeStrategyTag && task.creativeStrategyTag.includes(tag)
+            );
+            if (!taskHasSelectedTag) {
+                return false;
+            }
+        }
         return true;
     });
 
@@ -541,6 +635,12 @@ function resetFilters() {
             input.value = '';
         }
     });
+    
+    // 重置创意策略标签
+    selectedCreativeStrategyTags = [];
+    const checkboxes = document.querySelectorAll('#creativeStrategyContent input[type="checkbox"]');
+    checkboxes.forEach(cb => cb.checked = false);
+    updateCreativeStrategyDisplay();
     
     // 重置时间范围为默认值（近3日）
     setDefaultTimeRange();
@@ -1039,6 +1139,69 @@ function formatFileSize(bytes) {
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 }
+
+// 创意策略标签多选下拉框功能
+let selectedCreativeStrategyTags = [];
+
+// 切换创意策略下拉框
+function toggleCreativeStrategyDropdown() {
+    const content = document.getElementById('creativeStrategyContent');
+    const header = document.querySelector('.dropdown-header');
+    
+    if (content.style.display === 'none') {
+        content.style.display = 'block';
+        header.classList.add('active');
+    } else {
+        content.style.display = 'none';
+        header.classList.remove('active');
+    }
+}
+
+// 应用创意策略筛选
+function applyCreativeStrategyFilter() {
+    const checkboxes = document.querySelectorAll('#creativeStrategyContent input[type="checkbox"]:checked');
+    selectedCreativeStrategyTags = Array.from(checkboxes).map(cb => cb.value);
+    
+    updateCreativeStrategyDisplay();
+    toggleCreativeStrategyDropdown();
+}
+
+// 清除创意策略筛选
+function clearCreativeStrategyFilter() {
+    const checkboxes = document.querySelectorAll('#creativeStrategyContent input[type="checkbox"]');
+    checkboxes.forEach(cb => cb.checked = false);
+    selectedCreativeStrategyTags = [];
+    
+    updateCreativeStrategyDisplay();
+    toggleCreativeStrategyDropdown();
+}
+
+// 更新创意策略显示
+function updateCreativeStrategyDisplay() {
+    const selectedText = document.querySelector('.selected-text');
+    
+    if (selectedCreativeStrategyTags.length === 0) {
+        selectedText.textContent = '请选择创意策略标签';
+        selectedText.classList.remove('has-selection');
+    } else if (selectedCreativeStrategyTags.length === 1) {
+        selectedText.textContent = selectedCreativeStrategyTags[0];
+        selectedText.classList.add('has-selection');
+    } else {
+        selectedText.textContent = `已选择 ${selectedCreativeStrategyTags.length} 个标签`;
+        selectedText.classList.add('has-selection');
+    }
+}
+
+// 点击外部关闭下拉框
+document.addEventListener('click', function(event) {
+    const dropdown = document.getElementById('creativeStrategyDropdown');
+    if (!dropdown.contains(event.target)) {
+        const content = document.getElementById('creativeStrategyContent');
+        const header = document.querySelector('.dropdown-header');
+        content.style.display = 'none';
+        header.classList.remove('active');
+    }
+});
 
 // 显示上传区域
 function showUploadArea() {
@@ -1559,22 +1722,34 @@ window.onclick = function(event) {
 }
 
 // 切换子任务展开/收起
-function toggleSubTasks(taskId) {
-    const button = document.querySelector(`[onclick="toggleSubTasks(${taskId})"]`);
+// 切换展开内容显示（支持子任务和小红书详情）
+function toggleExpandableContent(taskId) {
+    const button = document.querySelector(`[onclick="toggleExpandableContent(${taskId})"]`);
     const isExpanded = button.getAttribute('data-expanded') === 'true';
-    const subRows = document.querySelectorAll(`tr[data-parent-id="${taskId}"]`);
+    
+    // 切换子任务行
+    const subRows = document.querySelectorAll(`tr[data-parent-id="${taskId}"].sub-task-row`);
+    // 切换小红书详情行
+    const xiaohongshuRows = document.querySelectorAll(`tr[data-parent-id="${taskId}"].xiaohongshu-detail-row`);
     
     if (isExpanded) {
         // 收起
         subRows.forEach(row => row.style.display = 'none');
+        xiaohongshuRows.forEach(row => row.style.display = 'none');
         button.setAttribute('data-expanded', 'false');
         button.innerHTML = '<i class="fas fa-chevron-down"></i>';
     } else {
         // 展开
         subRows.forEach(row => row.style.display = 'table-row');
+        xiaohongshuRows.forEach(row => row.style.display = 'table-row');
         button.setAttribute('data-expanded', 'true');
         button.innerHTML = '<i class="fas fa-chevron-up"></i>';
     }
+}
+
+// 兼容旧的子任务切换函数
+function toggleSubTasks(taskId) {
+    toggleExpandableContent(taskId);
 }
 
 // 子任务操作函数
