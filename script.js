@@ -4,13 +4,125 @@ let selectedTasks = [];
 let currentUser = 'OA001'; // 当前登录用户，用于判断操作权限
 let uploadedMaterials = []; // 上传的素材列表
 
+// 手机号到姓名的映射
+const phoneToNameMap = {
+    '138****1234': '俊俊',
+    '139****5678': '小美',
+    '137****9012': '阿强',
+    '136****3456': '丽丽',
+    '135****7890': '小明',
+    '134****5678': '小红',
+    '13800138007': '小张'
+};
+
+// 列配置管理器
+class TableColumnManager {
+    constructor() {
+        this.columns = this.initializeColumns();
+        this.visibleColumns = this.columns.filter(col => col.visible);
+        this.loadColumnConfig();
+    }
+    
+    initializeColumns() {
+        return [
+            { key: 'select', label: '选择', type: 'checkbox', width: 60, visible: true, fixed: true },
+            { key: 'createTime', label: '创建时间', type: 'datetime', width: 140, visible: true, sortable: true },
+            { key: 'expectedTime', label: '期望交付时间', type: 'datetime', width: 140, visible: true, sortable: true },
+            { key: 'taskHours', label: '任务工时', type: 'text', width: 100, visible: true, formatter: 'formatTaskHours' },
+            { key: 'submitter', label: '提单人', type: 'text', width: 150, visible: true, formatter: 'formatSubmitter' },
+            { key: 'designer', label: '设计师', type: 'text', width: 100, visible: true },
+            { key: 'status', label: '创意状态', type: 'status', width: 120, visible: true },
+            { key: 'updateTime', label: '更新时间', type: 'datetime', width: 140, visible: true },
+            { key: 'generationId', label: '生成ID', type: 'text', width: 120, visible: true },
+            { key: 'generationType', label: '生成类型', type: 'text', width: 120, visible: true },
+            { key: 'channel', label: '渠道', type: 'text', width: 100, visible: true },
+            { key: 'materialSource', label: '素材来源', type: 'text', width: 120, visible: true },
+            { key: 'templateCategory', label: '模板分类', type: 'text', width: 120, visible: true },
+            { key: 'productQuantity', label: '商品数量', type: 'number', width: 100, visible: true },
+            { key: 'materialQuantity', label: '素材数量', type: 'number', width: 100, visible: true },
+            { key: 'materialSize', label: '素材尺寸', type: 'text', width: 140, visible: true, formatter: 'formatMaterialSize' },
+            { key: 'productCategory', label: '品类', type: 'text', width: 100, visible: true },
+            { key: 'productId', label: '商品ID/等级', type: 'text', width: 200, visible: true },
+            { key: 'priceInfo', label: '价格信息', type: 'text', width: 500, visible: true, cssClass: 'price-info-cell' },
+            { key: 'applicationScenario', label: '应用场景', type: 'text', width: 100, visible: true },
+            { key: 'creativeStrategyTag', label: '创意策略标签', type: 'text', width: 150, visible: true },
+            { key: 'requirementNote', label: '需求备注', type: 'text', width: 150, visible: true },
+            { key: 'referenceImages', label: '参考图', type: 'links', width: 120, visible: true, formatter: 'formatReferenceImages', cssClass: 'reference-images-cell' },
+            { key: 'regenerationSuggestion', label: '重新生成建议', type: 'text', width: 150, visible: true },
+            { key: 'operations', label: '操作', type: 'operations', width: 180, visible: true, fixed: true }
+        ];
+    }
+    
+    loadColumnConfig() {
+        const saved = localStorage.getItem('tableColumnConfig');
+        if (saved) {
+            const savedConfig = JSON.parse(saved);
+            this.columns.forEach(col => {
+                const savedCol = savedConfig.find(sc => sc.key === col.key);
+                if (savedCol) {
+                    col.visible = savedCol.visible;
+                    col.width = savedCol.width;
+                }
+            });
+            this.visibleColumns = this.columns.filter(col => col.visible);
+        }
+    }
+    
+    saveColumnConfig() {
+        const config = this.columns.map(col => ({
+            key: col.key,
+            visible: col.visible,
+            width: col.width
+        }));
+        localStorage.setItem('tableColumnConfig', JSON.stringify(config));
+    }
+    
+    toggleColumnVisibility(columnKey) {
+        const col = this.columns.find(c => c.key === columnKey);
+        if (col && !col.fixed) {
+            col.visible = !col.visible;
+            this.visibleColumns = this.columns.filter(col => col.visible);
+            this.saveColumnConfig();
+            renderTable();
+        }
+    }
+    
+    updateColumnWidth(columnKey, width) {
+        const col = this.columns.find(c => c.key === columnKey);
+        if (col) {
+            col.width = width;
+            this.saveColumnConfig();
+            this.updateColumnStyles();
+        }
+    }
+    
+    updateColumnStyles() {
+        this.visibleColumns.forEach((col, index) => {
+            const cssVar = `--col-${col.key}-width`;
+            document.documentElement.style.setProperty(cssVar, `${col.width}px`);
+        });
+    }
+    
+    getColumnByKey(key) {
+        return this.columns.find(col => col.key === key);
+    }
+    
+    getVisibleColumns() {
+        return this.visibleColumns;
+    }
+}
+
+// 初始化列管理器
+const columnManager = new TableColumnManager();
+
 // 模拟数据
 const mockData = [
     {
-        id: 1,
+        id: '7CrNkAAE',
         createTime: '2024-01-15 10:30:00',
         expectedTime: '2024-01-20 18:00:00',
         expectedHours: 120,
+        taskHours: 35,
         submitter: '138****1234',
         designer: 'AIGC',
         status: 'generating',
@@ -23,19 +135,22 @@ const mockData = [
         productQuantity: 1,
         materialQuantity: 3,
         materialSize: '1280x720',
-        productId: 'PROD001',
+        productId: 'PROD001/国A级',
         productLevel: '一级',
         productCategory: '服装',
+        priceInfo: '市价299|唯品199|到手159|直降40|折扣0.8|',
         applicationScenario: '日常',
         creativeStrategyTag: '突出商品',
         requirementNote: '需要突出产品质感',
+        referenceImages: ['https://example.com/ref1.jpg', 'https://example.com/ref2.jpg'],
         regenerationSuggestion: ''
     },
     {
-        id: 2,
+        id: '7CrNkAAF',
         createTime: '2024-01-15 09:15:00',
         expectedTime: '2024-01-18 18:00:00',
         expectedHours: 72,
+        taskHours: 50,
         submitter: '139****5678',
         designer: '',
         status: 'unassigned', // 待分配设计师
@@ -48,19 +163,22 @@ const mockData = [
         productQuantity: 2,
         materialQuantity: 5,
         materialSize: '1920x1080',
-        productId: 'PROD002,PROD003',
+        productId: 'PROD002/国B级\nPROD003/国B级',
         productLevel: '二级',
         productCategory: '美妆',
+        priceInfo: '市价199|唯品129|到手99|直降30|折扣0.77|<br>市价299|唯品199|到手159|直降40|折扣0.8|',
         applicationScenario: '促销',
         creativeStrategyTag: '情绪营销',
         requirementNote: '突出产品功效',
+        referenceImages: ['https://example.com/ref3.jpg'],
         regenerationSuggestion: ''
     },
     {
-        id: 3,
+        id: '7CrNkAAG',
         createTime: '2024-01-14 16:45:00',
         expectedTime: '2024-01-17 18:00:00',
         expectedHours: 72,
+        taskHours: 120,
         submitter: '137****9012',
         designer: 'OA001',
         status: 'pending',
@@ -73,19 +191,22 @@ const mockData = [
         productQuantity: 1,
         materialQuantity: 2,
         materialSize: '1080x1920',
-        productId: 'PROD004',
+        productId: 'PROD004/国C级',
         productLevel: '三级',
         productCategory: '数码',
+        priceInfo: '市价1299|唯品999|到手799|直降200|折扣0.8|',
         applicationScenario: '节日',
         creativeStrategyTag: '突出价格',
         requirementNote: '突出科技感',
+        referenceImages: ['https://example.com/ref4.jpg', 'https://example.com/ref5.jpg', 'https://example.com/ref6.jpg'],
         regenerationSuggestion: '建议增加更多产品细节'
     },
     {
-        id: 4,
+        id: '7CrNkAAH',
         createTime: '2024-01-14 14:20:00',
         expectedTime: '20244-01-16 18:00:00',
         expectedHours: 48,
+        taskHours: 90,
         submitter: '136****3456',
         designer: '',
         status: 'unassigned', // 待分配设计师
@@ -98,19 +219,22 @@ const mockData = [
         productQuantity: 3,
         materialQuantity: 4,
         materialSize: '1280x720',
-        productId: 'PROD005,PROD006,PROD007',
+        productId: 'PROD005/国A级\nPROD006/国A级\nPROD007/国A级',
         productLevel: '一级',
         productCategory: '食品',
+        priceInfo: '市价89|唯品59|到手49|直降10|折扣0.83|<br>市价129|唯品89|到手69|直降20|折扣0.78|<br>市价199|唯品139|到手109|直降30|折扣0.78|',
         applicationScenario: '日常',
         creativeStrategyTag: '突出折扣',
         requirementNote: '突出美食诱惑',
+        referenceImages: [],
         regenerationSuggestion: '需要更吸引人的视觉效果'
     },
     {
-        id: 5,
+        id: '7CrNkAAI',
         createTime: '2024-01-13 11:30:00',
         expectedTime: '2024-01-15 18:00:00',
         expectedHours: 48,
+        taskHours: 75,
         submitter: '135****7890',
         designer: 'AIGC',
         status: 'completed',
@@ -123,13 +247,19 @@ const mockData = [
         productQuantity: 1,
         materialQuantity: 6,
         materialSize: '1920x1080',
-        productId: 'PROD008',
+        productId: 'PROD008/国B级',
         productLevel: '二级',
         productCategory: '家居',
+        priceInfo: '市价599|唯品399|到手299|直降100|折扣0.75|',
         applicationScenario: '促销',
         creativeStrategyTag: '多品主题',
         requirementNote: '营造温馨氛围',
+        referenceImages: ['https://example.com/ref7.jpg'],
         regenerationSuggestion: '',
+        uploadedMaterials: [
+            'VIP回儿童运0088291+腾讯app+竖图+回力+母婴鞋服+6920285558148105032+胡俊-9299',
+            'VIP回儿童运0088292+腾讯app+横图+回力+母婴鞋服+6920285558148105033+胡俊-9300'
+        ],
         subTasks: [
             { designer: 'OA001', status: 'completed', materialQuantity: 2 },
             { designer: 'OA002', status: 'completed', materialQuantity: 2 },
@@ -137,10 +267,11 @@ const mockData = [
         ]
     },
     {
-        id: 6,
+        id: '7CrNkAAJ',
         createTime: '2024-01-16 14:20:00',
         expectedTime: '2024-01-19 18:00:00',
         expectedHours: 72,
+        taskHours: 45,
         submitter: '134****5678',
         designer: 'OA002',
         status: 'generating',
@@ -153,19 +284,25 @@ const mockData = [
         productQuantity: 1,
         materialQuantity: 2,
         materialSize: '快手PD；网易PD；百度PD视频',
-        productId: 'PROD009',
+        productId: 'PROD009/国C级',
         productLevel: '三级',
         productCategory: '配饰',
+        priceInfo: '市价199|唯品129|到手99|直降30|折扣0.77|',
         applicationScenario: '日常',
         creativeStrategyTag: '实拍合集-九宫格',
         requirementNote: '突出时尚感',
-        regenerationSuggestion: ''
+        referenceImages: ['https://example.com/ref8.jpg', 'https://example.com/ref9.jpg'],
+        regenerationSuggestion: '',
+        uploadedMaterials: [
+            'VIP时尚配饰0088293+抖音+单图+时尚+配饰+6920285558148105034+李慧丹-9301'
+        ]
     },
     {
-        id: 7,
+        id: '7CrNkAAK',
         createTime: '2024-01-16 09:15:00',
         expectedTime: '2024-01-17 12:00:00',
         expectedHours: 27,
+        taskHours: 60,
         submitter: '13800138007',
         designer: 'AIGC',
         status: 'generating',
@@ -178,12 +315,14 @@ const mockData = [
         productQuantity: 1,
         materialQuantity: 1,
         materialSize: '1080x1080',
-        productId: '6920832209174221771',
+        productId: '6920832209174221771/国A级',
         productLevel: '一级',
         productCategory: '服装',
+        priceInfo: '市价399|唯品299|到手239|直降60|折扣0.8|',
         applicationScenario: '日常',
         creativeStrategyTag: '突出商品',
         requirementNote: 'ins风格穿搭推荐',
+        referenceImages: ['https://example.com/ref10.jpg'],
         regenerationSuggestion: '',
         // 小红书特有字段
         xiaohongshuData: {
@@ -219,6 +358,660 @@ function formatMaterialSize(materialSize, channel) {
     return materialSize;
 }
 
+// 格式化参考图显示
+function formatReferenceImages(referenceImages) {
+    if (!referenceImages || referenceImages.length === 0) {
+        return '-';
+    }
+    
+    return referenceImages.map((url, index) => 
+        `<a href="#" class="reference-link" onclick="openReferenceModal('${url}', ${index + 1}); return false;">参考${index + 1}</a>`
+    ).join(' ');
+}
+
+// 格式化提单人显示
+function formatSubmitter(phone) {
+    const name = phoneToNameMap[phone];
+    if (name) {
+        return `${phone}（${name}）`;
+    }
+    return phone;
+}
+
+// 格式化任务工时显示
+function formatTaskHours(hours) {
+    if (!hours || hours <= 0) {
+        return '-';
+    }
+    
+    // 如果小于60分钟，显示分钟
+    if (hours < 60) {
+        return `${hours}min`;
+    }
+    
+    // 如果大于等于60分钟，显示小时和分钟
+    const hoursPart = Math.floor(hours / 60);
+    const minutesPart = hours % 60;
+    
+    if (minutesPart === 0) {
+        return `${hoursPart}h`;
+    } else {
+        return `${hoursPart}h${minutesPart}min`;
+    }
+}
+
+// 计算设计师工时统计
+function calculateDesignerStats() {
+    const stats = {};
+    let totalHours = 0;
+    let designerCount = 0;
+    
+    taskData.forEach(task => {
+        // 只统计已分配设计师且非AIGC的任务
+        if (task.designer && task.designer !== 'AIGC' && task.taskHours) {
+            const designer = task.designer;
+            
+            if (!stats[designer]) {
+                stats[designer] = {
+                    name: designer,
+                    totalHours: 0,
+                    taskCount: 0
+                };
+                designerCount++;
+            }
+            
+            stats[designer].totalHours += task.taskHours;
+            stats[designer].taskCount++;
+            totalHours += task.taskHours;
+        }
+    });
+    
+    return {
+        stats: Object.values(stats).sort((a, b) => b.totalHours - a.totalHours),
+        totalHours,
+        designerCount
+    };
+}
+
+// 格式化工时显示（用于统计）
+function formatHoursForStats(minutes) {
+    if (minutes < 60) {
+        return `${minutes}min`;
+    }
+    
+    const hours = Math.floor(minutes / 60);
+    const remainingMinutes = minutes % 60;
+    
+    if (remainingMinutes === 0) {
+        return `${hours}h`;
+    } else {
+        return `${hours}h${remainingMinutes}min`;
+    }
+}
+
+// 设计师工时统计浮窗相关函数
+function toggleDesignerStats() {
+    const panel = document.getElementById('designerStatsPanel');
+    const isExpanded = panel.classList.contains('expanded');
+    
+    if (isExpanded) {
+        panel.classList.remove('expanded');
+    } else {
+        panel.classList.add('expanded');
+        renderDesignerStats();
+    }
+}
+
+function renderDesignerStats() {
+    const statsData = calculateDesignerStats();
+    
+    // 更新汇总信息
+    document.getElementById('totalHours').textContent = formatHoursForStats(statsData.totalHours);
+    document.getElementById('designerCount').textContent = statsData.designerCount;
+    
+    // 渲染设计师列表
+    const designerList = document.getElementById('designerList');
+    
+    if (statsData.stats.length === 0) {
+        designerList.innerHTML = `
+            <div class="designer-item no-assignments">
+                <span class="designer-name">暂无设计师分配</span>
+                <span class="designer-hours">0min</span>
+            </div>
+        `;
+        return;
+    }
+    
+    designerList.innerHTML = statsData.stats.map(designer => `
+        <div class="designer-item">
+            <span class="designer-name">${designer.name}</span>
+            <span class="designer-hours">${formatHoursForStats(designer.totalHours)}</span>
+        </div>
+    `).join('');
+}
+
+// 批量上传相关变量和函数
+let bulkUploadData = {};
+
+// 打开批量上传弹窗
+function openBulkUpload() {
+    if (selectedTasks.length === 0) {
+        alert('请先选择要上传的任务');
+        return;
+    }
+    
+    // 初始化批量上传数据
+    bulkUploadData = {};
+    selectedTasks.forEach(taskId => {
+        const task = taskData.find(t => t.id === taskId);
+        if (task) {
+            bulkUploadData[taskId] = {
+                task: task,
+                files: [],
+                materialTags: {}
+            };
+        }
+    });
+    
+    document.getElementById('selectedTaskCount').textContent = selectedTasks.length;
+    renderBulkUploadTable();
+    document.getElementById('bulkUploadModal').style.display = 'block';
+}
+
+// 渲染批量上传表格
+function renderBulkUploadTable() {
+    const tbody = document.getElementById('bulkUploadTableBody');
+    tbody.innerHTML = '';
+    
+    selectedTasks.forEach(taskId => {
+        const uploadData = bulkUploadData[taskId];
+        const task = uploadData.task;
+        
+        const row = document.createElement('tr');
+        row.className = 'bulk-upload-row';
+        row.dataset.taskId = taskId;
+        row.setAttribute('ondrop', `handleRowDrop(event, '${taskId}')`);
+        row.setAttribute('ondragover', 'handleRowDragOver(event)');
+        row.setAttribute('ondragleave', 'handleRowDragLeave(event)');
+        row.innerHTML = `
+            <td class="task-id-cell">
+                <div class="task-id-container">
+                    <button class="btn btn-sm btn-outline-primary upload-btn" 
+                            onclick="triggerFileInput('${taskId}')" 
+                            title="点击上传素材">
+                        <i class="fas fa-upload"></i>
+                    </button>
+                    <span class="task-id-text">${taskId}</span>
+                    <div class="uploaded-files-mini" id="uploadedFiles_${taskId}"></div>
+                </div>
+                <input type="file" id="fileInput_${taskId}" 
+                       style="display: none;" 
+                       multiple 
+                       accept="image/*,video/*"
+                       onchange="handleFileSelect(event, '${taskId}')">
+            </td>
+            <td class="task-requirements">
+                <div class="requirements-horizontal">
+                    <span class="requirement-badge">${task.materialQuantity || 1}个</span>
+                    <span class="requirement-badge">${formatMaterialSize(task.materialSize, task.channel)}</span>
+                    <span class="requirement-badge">${task.generationType}</span>
+                </div>
+            </td>
+            <td class="material-tags-container" id="materialTags_${taskId}">
+                <button class="btn btn-sm btn-outline-primary tags-expand-btn" 
+                        onclick="toggleTagsExpansion('${taskId}')" 
+                        id="tagsBtn_${taskId}">
+                    <i class="fas fa-tags"></i> 标签
+                    <span class="tags-count" id="tagsCount_${taskId}">0</span>
+                </button>
+            </td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+// 触发文件选择
+function triggerFileInput(taskId) {
+    console.log('triggerFileInput called with taskId:', taskId);
+    const fileInput = document.getElementById(`fileInput_${taskId}`);
+    console.log('fileInput element:', fileInput);
+    if (fileInput) {
+        try {
+            fileInput.click();
+            console.log('File input clicked successfully');
+        } catch (error) {
+            console.error('Error clicking file input:', error);
+        }
+    } else {
+        console.error('File input element not found for taskId:', taskId);
+    }
+}
+
+// 处理文件选择
+function handleFileSelect(event, taskId) {
+    const files = Array.from(event.target.files);
+    addFilesToTask(files, taskId);
+}
+
+// 处理拖拽悬停
+function handleDragOver(event) {
+    event.preventDefault();
+    event.currentTarget.classList.add('drag-over');
+}
+
+// 处理拖拽离开
+function handleDragLeave(event) {
+    event.currentTarget.classList.remove('drag-over');
+}
+
+// 处理拖拽放置
+function handleDrop(event, taskId) {
+    event.preventDefault();
+    event.currentTarget.classList.remove('drag-over');
+    
+    const files = Array.from(event.dataTransfer.files);
+    addFilesToTask(files, taskId);
+}
+
+// 处理任务行拖拽悬停
+function handleRowDragOver(event) {
+    event.preventDefault();
+    event.currentTarget.classList.add('row-drag-over');
+}
+
+// 处理任务行拖拽离开
+function handleRowDragLeave(event) {
+    event.currentTarget.classList.remove('row-drag-over');
+}
+
+// 处理任务行拖拽放置
+function handleRowDrop(event, taskId) {
+    event.preventDefault();
+    event.currentTarget.classList.remove('row-drag-over');
+    
+    const files = Array.from(event.dataTransfer.files);
+    addFilesToTask(files, taskId);
+}
+
+// 添加文件到任务
+function addFilesToTask(files, taskId) {
+    const uploadData = bulkUploadData[taskId];
+    if (!uploadData) return;
+    
+    files.forEach(file => {
+        uploadData.files.push(file);
+        uploadData.materialTags[file.name] = {
+            name: file.name,
+            category: '',
+            channel: '',
+            designer: '',
+            productId: '',
+            textTags: ''
+        };
+    });
+    
+    renderUploadedFiles(taskId);
+    renderMaterialTags(taskId);
+}
+
+// 渲染已上传文件（迷你版本）
+function renderUploadedFiles(taskId) {
+    const container = document.getElementById(`uploadedFiles_${taskId}`);
+    const uploadData = bulkUploadData[taskId];
+    
+    if (uploadData.files.length === 0) {
+        container.innerHTML = '';
+        return;
+    }
+    
+    container.innerHTML = uploadData.files.map((file, index) => `
+        <div class="uploaded-file-mini" title="${file.name}">
+            <img src="${URL.createObjectURL(file)}" class="file-preview-mini" alt="预览">
+            <span class="remove-file-mini" onclick="removeFile('${file.name}', '${taskId}')">&times;</span>
+        </div>
+    `).join('');
+}
+
+// 渲染素材标签
+function renderMaterialTags(taskId) {
+    const container = document.getElementById(`materialTags_${taskId}`);
+    const uploadData = bulkUploadData[taskId];
+    
+    if (uploadData.files.length === 0) {
+        container.innerHTML = `
+            <button class="btn btn-sm btn-outline-secondary tags-expand-btn" disabled>
+                <i class="fas fa-tags"></i> 标签
+                <span class="tags-count">0</span>
+            </button>
+        `;
+        return;
+    }
+    
+    // 更新标签数量
+    const tagsCount = document.getElementById(`tagsCount_${taskId}`);
+    if (tagsCount) {
+        tagsCount.textContent = uploadData.files.length;
+    }
+}
+
+// 切换标签展开面板
+function toggleTagsExpansion(taskId) {
+    const panel = document.getElementById('tagsExpansionPanel');
+    const title = document.getElementById('tagsPanelTitle');
+    const uploadData = bulkUploadData[taskId];
+    
+    if (!uploadData || uploadData.files.length === 0) {
+        alert('该任务暂无素材，请先上传素材');
+        return;
+    }
+    
+    title.textContent = `任务 ${taskId} - 素材标签设置`;
+    renderTagsTable(taskId);
+    
+    // 显示面板
+    panel.style.display = 'block';
+    panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+// 渲染标签表格
+function renderTagsTable(taskId) {
+    const tbody = document.getElementById('tagsTableBody');
+    const uploadData = bulkUploadData[taskId];
+    
+    if (!uploadData || uploadData.files.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: #999;">暂无素材</td></tr>';
+        return;
+    }
+    
+    tbody.innerHTML = uploadData.files.map(file => {
+        const tags = uploadData.materialTags[file.name];
+        return `
+            <tr class="tag-row">
+                <td class="preview-cell">
+                    <img src="${URL.createObjectURL(file)}" class="material-preview-table" alt="预览">
+                </td>
+                <td class="name-cell">
+                    <input type="text" class="form-control form-control-sm" 
+                           value="${tags.name}" 
+                           onchange="updateMaterialName('${file.name}', this.value, '${taskId}')"
+                           placeholder="素材名称">
+                </td>
+                <td class="category-cell">
+                    <input type="text" class="form-control form-control-sm" 
+                           value="${tags.category}"
+                           onchange="updateMaterialTag('${file.name}', 'category', this.value, '${taskId}')"
+                           placeholder="品类">
+                </td>
+                <td class="channel-cell">
+                    <input type="text" class="form-control form-control-sm" 
+                           value="${tags.channel}"
+                           onchange="updateMaterialTag('${file.name}', 'channel', this.value, '${taskId}')"
+                           placeholder="渠道">
+                </td>
+                <td class="designer-cell">
+                    <input type="text" class="form-control form-control-sm" 
+                           value="${tags.designer}"
+                           onchange="updateMaterialTag('${file.name}', 'designer', this.value, '${taskId}')"
+                           placeholder="设计师">
+                </td>
+                <td class="product-cell">
+                    <input type="text" class="form-control form-control-sm" 
+                           value="${tags.productId}"
+                           onchange="updateMaterialTag('${file.name}', 'productId', this.value, '${taskId}')"
+                           placeholder="商品ID">
+                </td>
+                <td class="text-tags-cell">
+                    <input type="text" class="form-control form-control-sm" 
+                           value="${tags.textTags}"
+                           onchange="updateMaterialTag('${file.name}', 'textTags', this.value, '${taskId}')"
+                           placeholder="文本标签">
+                </td>
+            </tr>
+        `;
+    }).join('');
+}
+
+// 关闭标签展开面板
+function closeTagsExpansion() {
+    document.getElementById('tagsExpansionPanel').style.display = 'none';
+}
+
+// 更新上传区域状态
+function updateUploadArea(taskId) {
+    const uploadArea = document.getElementById(`uploadArea_${taskId}`);
+    const uploadData = bulkUploadData[taskId];
+    
+    if (uploadData.files.length > 0) {
+        uploadArea.classList.add('has-files');
+    } else {
+        uploadArea.classList.remove('has-files');
+    }
+}
+
+// 移除文件
+function removeFile(fileName, taskId) {
+    const uploadData = bulkUploadData[taskId];
+    if (!uploadData) return;
+    
+    uploadData.files = uploadData.files.filter(file => file.name !== fileName);
+    delete uploadData.materialTags[fileName];
+    
+    renderUploadedFiles(taskId);
+    renderMaterialTags(taskId);
+}
+
+// 更新素材名称
+function updateMaterialName(fileName, newName, taskId) {
+    const uploadData = bulkUploadData[taskId];
+    if (uploadData && uploadData.materialTags[fileName]) {
+        uploadData.materialTags[fileName].name = newName;
+    }
+}
+
+// 更新素材标签
+function updateMaterialTag(fileName, tagType, value, taskId) {
+    const uploadData = bulkUploadData[taskId];
+    if (uploadData && uploadData.materialTags[fileName]) {
+        uploadData.materialTags[fileName][tagType] = value;
+    }
+}
+
+// 清空所有上传
+function clearAllUploads() {
+    if (confirm('确定要清空所有上传的素材吗？')) {
+        selectedTasks.forEach(taskId => {
+            const uploadData = bulkUploadData[taskId];
+            if (uploadData) {
+                uploadData.files = [];
+                uploadData.materialTags = {};
+            }
+            renderUploadedFiles(taskId);
+            renderMaterialTags(taskId);
+            updateUploadArea(taskId);
+        });
+    }
+}
+
+// 确认批量上传
+function confirmBulkUpload() {
+    let hasFiles = false;
+    let totalFiles = 0;
+    
+    // 检查是否有文件上传
+    selectedTasks.forEach(taskId => {
+        const uploadData = bulkUploadData[taskId];
+        if (uploadData && uploadData.files.length > 0) {
+            hasFiles = true;
+            totalFiles += uploadData.files.length;
+        }
+    });
+    
+    if (!hasFiles) {
+        alert('请至少为一个任务上传素材');
+        return;
+    }
+    
+    // 显示进度条
+    document.getElementById('uploadProgress').style.display = 'block';
+    document.getElementById('confirmBulkUploadBtn').disabled = true;
+    
+    // 模拟上传过程 - 使用更可靠的线性进度
+    const progressFill = document.getElementById('progressFill');
+    const progressText = document.getElementById('progressText');
+    const uploadDuration = 3000; // 总上传时间3秒
+    const updateInterval = 50; // 每50ms更新一次
+    const totalSteps = uploadDuration / updateInterval;
+    let currentStep = 0;
+    
+    const uploadInterval = setInterval(() => {
+        currentStep++;
+        const progress = Math.min((currentStep / totalSteps) * 100, 100);
+        
+        progressFill.style.width = progress + '%';
+        progressText.textContent = `上传中... ${Math.round(progress)}%`;
+        
+        if (currentStep >= totalSteps) {
+            clearInterval(uploadInterval);
+            
+            // 确保进度条显示100%
+            progressFill.style.width = '100%';
+            progressText.textContent = '上传中... 100%';
+            
+            // 上传完成，更新任务状态
+            selectedTasks.forEach(taskId => {
+                const uploadData = bulkUploadData[taskId];
+                if (uploadData && uploadData.files.length > 0) {
+                    const task = taskData.find(t => t.id === taskId);
+                    if (task) {
+                        task.status = 'uploaded';
+                        task.updateTime = new Date().toLocaleString('zh-CN');
+                        task.uploadedMaterials = uploadData.files.map((file, index) => {
+                            const tags = uploadData.materialTags[file.name];
+                            const taskInfo = task;
+                            const designer = tags.designer || taskInfo.designer || '未知设计师';
+                            const category = tags.category || taskInfo.productCategory;
+                            const channel = tags.channel || taskInfo.channel;
+                            const productId = tags.productId || taskInfo.productId.split('\n')[0].split('/')[0];
+                            const materialName = `VIP${taskId}+${channel}+${taskInfo.generationType}+${designer}+${category}+${productId}+${designer}-${9000 + index}`;
+                            return materialName;
+                        });
+                    }
+                }
+            });
+            
+            // 重新渲染表格
+            renderTable();
+            
+            setTimeout(() => {
+                alert('批量上传完成！');
+                closeModal('bulkUploadModal');
+                document.getElementById('uploadProgress').style.display = 'none';
+                document.getElementById('confirmBulkUploadBtn').disabled = false;
+                progressFill.style.width = '0%';
+                progressText.textContent = '上传中...';
+            }, 1000);
+        }
+    }, updateInterval);
+}
+
+// 格式化素材名称显示
+function formatMaterialName(fullName) {
+    if (!fullName) return '';
+    
+    // 如果名称长度超过30个字符，截断并添加省略号
+    if (fullName.length > 30) {
+        return fullName.substring(0, 30) + '...';
+    }
+    return fullName;
+}
+
+// 格式化上传素材显示
+function formatUploadedMaterials(materials) {
+    if (!materials || materials.length === 0) {
+        return '';
+    }
+    
+    return materials.map((material, index) => {
+        const displayName = formatMaterialName(material);
+        return `<a href="https://e.vip.com/creative-centre.html?advId=w-7CiSRV#/?pi=1&groupId=7CrNu0Qy" 
+                   target="_blank" 
+                   class="material-link" 
+                   title="${material}">
+                   ${displayName}
+                 </a>`;
+    }).join('<br>');
+}
+
+// 列配置面板功能
+function toggleColumnConfig() {
+    const panel = document.getElementById('columnConfigPanel');
+    if (panel.style.display === 'none') {
+        panel.style.display = 'block';
+        renderColumnConfig();
+    } else {
+        panel.style.display = 'none';
+    }
+}
+
+function renderColumnConfig() {
+    const columnList = document.getElementById('columnList');
+    columnList.innerHTML = '';
+    
+    columnManager.columns.forEach(column => {
+        const columnItem = document.createElement('div');
+        columnItem.className = 'column-item';
+        
+        columnItem.innerHTML = `
+            <label class="column-checkbox">
+                <input type="checkbox" 
+                       ${column.visible ? 'checked' : ''} 
+                       ${column.fixed ? 'disabled' : ''} 
+                       onchange="toggleColumn('${column.key}')">
+                <span class="column-label">${column.label}</span>
+                ${column.fixed ? '<span class="fixed-badge">固定</span>' : ''}
+            </label>
+        `;
+        
+        columnList.appendChild(columnItem);
+    });
+}
+
+function toggleColumn(columnKey) {
+    columnManager.toggleColumnVisibility(columnKey);
+}
+
+function showAllColumns() {
+    columnManager.columns.forEach(col => {
+        if (!col.fixed) {
+            col.visible = true;
+        }
+    });
+    columnManager.visibleColumns = columnManager.columns.filter(col => col.visible);
+    columnManager.saveColumnConfig();
+    renderTable();
+    renderColumnConfig();
+}
+
+function hideAllColumns() {
+    columnManager.columns.forEach(col => {
+        if (!col.fixed) {
+            col.visible = false;
+        }
+    });
+    columnManager.visibleColumns = columnManager.columns.filter(col => col.visible);
+    columnManager.saveColumnConfig();
+    renderTable();
+    renderColumnConfig();
+}
+
+function resetColumnConfig() {
+    localStorage.removeItem('tableColumnConfig');
+    columnManager.columns = columnManager.initializeColumns();
+    columnManager.visibleColumns = columnManager.columns.filter(col => col.visible);
+    renderTable();
+    renderColumnConfig();
+}
+
 // 初始化页面
 document.addEventListener('DOMContentLoaded', function() {
     taskData = [...mockData];
@@ -228,9 +1021,17 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // 渲染表格
 function renderTable() {
+    const thead = document.querySelector('#taskTable thead tr');
     const tbody = document.getElementById('taskTableBody');
+    
+    // 清空表格
+    thead.innerHTML = '';
     tbody.innerHTML = '';
-
+    
+    // 渲染表头
+    renderTableHeader(thead);
+    
+    // 渲染表格内容
     taskData.forEach((task, index) => {
         const row = document.createElement('tr');
         row.dataset.taskId = task.id;
@@ -239,51 +1040,8 @@ function renderTable() {
             row.classList.add('selected-row');
         }
 
-        // 添加展开/收起按钮
-        const hasExpandableContent = (task.generationType === '单品多视频' && task.subTasks && task.subTasks.length > 0) || 
-                                   (task.channel === 'xiaohongshu' && task.xiaohongshuData);
-        const expandButton = hasExpandableContent 
-            ? `<button class="btn btn-sm btn-secondary expand-btn" onclick="toggleExpandableContent(${task.id})" data-expanded="false">
-                 <i class="fas fa-chevron-down"></i>
-               </button>` 
-            : '';
-
-        row.innerHTML = `
-            <td>
-                <div style="display: flex; align-items: center; gap: 5px;">
-                    <input type="checkbox" 
-                           onchange="toggleTaskSelection(${task.id}, this)" 
-                           ${selectedTasks.includes(task.id) ? 'checked' : ''}>
-                    ${expandButton}
-                </div>
-            </td>
-            <td>${task.createTime}</td>
-            <td>${task.expectedTime}</td>
-            <td>${task.submitter}</td>
-            <td>${task.designer || '-'}</td>
-            <td><span class="status-tag ${statusMap[task.status].class}">${statusMap[task.status].text}</span></td>
-            <td>${task.updateTime}</td>
-            <td>${task.generationId}</td>
-            <td>${task.generationType}</td>
-            <td>${task.channel === 'xiaohongshu' ? '小红书' : task.channel}</td>
-            <td>${task.materialSource}</td>
-            <td>${task.templateCategory}</td>
-            <td>${task.productQuantity}</td>
-            <td>${task.materialQuantity}</td>
-            <td>${formatMaterialSize(task.materialSize, task.channel)}</td>
-            <td>${task.productId}/${task.productLevel}</td>
-            <td>${task.productCategory}</td>
-            <td>${task.applicationScenario}</td>
-            <td>${task.creativeStrategyTag}</td>
-            <td>${task.requirementNote || '-'}</td>
-            <td>${task.regenerationSuggestion || '-'}</td>
-            <td>
-                <div class="operation-buttons">
-                    ${getOperationButtonsHTML(task)}
-                </div>
-            </td>
-        `;
-
+        // 渲染表格行
+        renderTableRow(row, task);
         tbody.appendChild(row);
         
         // 如果是单品多视频且有子任务，添加展开行（默认隐藏）
@@ -297,7 +1055,7 @@ function renderTable() {
                 
                 subRow.innerHTML = `
                     <td></td>
-                    <td colspan="19" class="sub-task-content">
+                    <td colspan="20" class="sub-task-content">
                         <div class="sub-task-info">
                             <span class="sub-task-label">设计师: ${subTask.designer}</span>
                             <span class="sub-task-status">状态: ${statusMap[subTask.status].text}</span>
@@ -322,7 +1080,7 @@ function renderTable() {
             
             xiaohongshuRow.innerHTML = `
                 <td></td>
-                <td colspan="19" class="xiaohongshu-detail-content">
+                <td colspan="20" class="xiaohongshu-detail-content">
                     <div class="xiaohongshu-details">
                         <div class="detail-item">
                             <span class="detail-label">选题：</span>
@@ -357,6 +1115,98 @@ function renderTable() {
     });
 
     updateBulkActions();
+}
+
+// 渲染表格表头
+function renderTableHeader(thead) {
+    const visibleColumns = columnManager.getVisibleColumns();
+    
+    visibleColumns.forEach(column => {
+        const th = document.createElement('th');
+        th.textContent = column.label;
+        
+        if (column.cssClass) {
+            th.className = column.cssClass;
+        }
+        
+        // 设置CSS变量用于宽度
+        th.style.setProperty('--column-width', `${column.width}px`);
+        
+        thead.appendChild(th);
+    });
+}
+
+// 渲染表格行
+function renderTableRow(row, task) {
+    const visibleColumns = columnManager.getVisibleColumns();
+    
+    visibleColumns.forEach(column => {
+        const td = document.createElement('td');
+        
+        // 根据列类型渲染内容
+        let content = '';
+        switch (column.key) {
+            case 'select':
+                const hasExpandableContent = (task.generationType === '单品多视频' && task.subTasks && task.subTasks.length > 0) || 
+                                           (task.channel === 'xiaohongshu' && task.xiaohongshuData);
+                const expandButton = hasExpandableContent 
+                    ? `<button class="btn btn-sm btn-secondary expand-btn" onclick="toggleExpandableContent('${task.id}')" data-expanded="false">
+                         <i class="fas fa-chevron-down"></i>
+                       </button>` 
+                    : '';
+                content = `
+                    <div style="display: flex; align-items: center; gap: 5px;">
+                        <input type="checkbox" 
+                               onchange="toggleTaskSelection('${task.id}', this)" 
+                               ${selectedTasks.includes(task.id) ? 'checked' : ''}>
+                        ${expandButton}
+                    </div>
+                `;
+                break;
+            case 'taskHours':
+                content = formatTaskHours(task.taskHours);
+                break;
+            case 'submitter':
+                content = formatSubmitter(task.submitter);
+                break;
+            case 'status':
+                content = `<span class="status-tag ${statusMap[task.status].class}">${statusMap[task.status].text}</span>`;
+                break;
+            case 'channel':
+                content = task.channel === 'xiaohongshu' ? '小红书' : task.channel;
+                break;
+            case 'materialSize':
+                content = formatMaterialSize(task.materialSize, task.channel);
+                break;
+            case 'productId':
+                content = task.productId;
+                td.style.whiteSpace = 'pre-line';
+                break;
+            case 'priceInfo':
+                content = task.priceInfo;
+                break;
+            case 'referenceImages':
+                content = formatReferenceImages(task.referenceImages);
+                break;
+            case 'operations':
+                content = `<div class="operation-buttons">${getOperationButtonsHTML(task)}</div>`;
+                break;
+            default:
+                content = task[column.key] || '-';
+        }
+        
+        td.innerHTML = content;
+        
+        // 应用CSS类
+        if (column.cssClass) {
+            td.className = column.cssClass;
+        }
+        
+        // 设置CSS变量用于宽度
+        td.style.setProperty('--column-width', `${column.width}px`);
+        
+        row.appendChild(td);
+    });
 }
 
 // 切换任务选择
@@ -431,10 +1281,16 @@ function updateBulkActions() {
 // 获取操作按钮HTML
 function getOperationButtonsHTML(task) {
     let buttonsHTML = '';
+    let materialsHTML = '';
     
-    // AIGC设计师 - 无按钮可操作
+    // 如果有上传的素材，显示素材列表
+    if (task.uploadedMaterials && task.uploadedMaterials.length > 0) {
+        materialsHTML = `<div class="uploaded-materials">${formatUploadedMaterials(task.uploadedMaterials)}</div>`;
+    }
+    
+    // AIGC设计师 - 无操作按钮显示
     if (task.designer === 'AIGC') {
-        buttonsHTML = '<button class="btn btn-secondary btn-disabled" disabled>AIGC自动处理中</button>';
+        buttonsHTML = '';
     }
     // 待分配设计师状态 - 显示分配设计师和导出任务
     else if (task.status === 'unassigned') {
@@ -482,7 +1338,7 @@ function getOperationButtonsHTML(task) {
         buttonsHTML = '';
     }
     
-    return buttonsHTML;
+    return buttonsHTML + materialsHTML;
 }
 
 // 获取子任务操作按钮HTML
@@ -492,16 +1348,16 @@ function getSubTaskOperationButtonsHTML(subTask, parentTaskId, subIndex) {
     // 单品多视频的子任务都有操作权限
     if (subTask.status === 'pending' || subTask.status === 're-pending') {
         buttonsHTML = `
-            <button class="btn btn-primary" onclick="startSubTaskProduction(${parentTaskId}, ${subIndex})">开始生产</button>
-            <button class="btn btn-danger" onclick="closeSubTask(${parentTaskId}, ${subIndex})">关闭</button>
+            <button class="btn btn-primary" onclick="startSubTaskProduction('${parentTaskId}', ${subIndex})">开始生产</button>
+            <button class="btn btn-danger" onclick="closeSubTask('${parentTaskId}', ${subIndex})">关闭</button>
         `;
     }
     else if (subTask.status === 'generating' || subTask.status === 're-generating') {
         // 子任务只显示上传素材按钮（子任务不支持图创作）
-        buttonsHTML = '<button class="btn btn-success" onclick="openSubTaskUploadModal(' + parentTaskId + ', ' + subIndex + ')">上传素材</button>';
+        buttonsHTML = '<button class="btn btn-success" onclick="openSubTaskUploadModal(\'' + parentTaskId + '\', ' + subIndex + ')">上传素材</button>';
     }
     else if (subTask.status === 'uploaded') {
-        buttonsHTML = '<button class="btn btn-primary" onclick="syncSubTaskToWeimiao(' + parentTaskId + ', ' + subIndex + ')">同步唯妙</button>';
+        buttonsHTML = '<button class="btn btn-primary" onclick="syncSubTaskToWeimiao(\'' + parentTaskId + '\', ' + subIndex + ')">同步唯妙</button>';
     }
     else if (subTask.status === 'completed') {
         buttonsHTML = '<button class="btn btn-secondary btn-disabled" disabled>已完成</button>';
@@ -1641,10 +2497,24 @@ function confirmUpload() {
         return;
     }
 
-    // 更新任务状态
+    // 更新任务状态和素材信息
     if (task) {
         task.status = 'uploaded';
         task.updateTime = new Date().toLocaleString('zh-CN');
+        
+        // 模拟生成素材名称（实际项目中应该从上传接口获取）
+        task.uploadedMaterials = uploadedMaterials.map((material, index) => {
+            const taskInfo = task;
+            const designer = taskInfo.designer || '未知设计师';
+            const productId = taskInfo.productId.split('\n')[0].split('/')[0]; // 获取第一个商品ID
+            const category = taskInfo.productCategory;
+            const generationType = taskInfo.generationType;
+            const channel = taskInfo.channel;
+            
+            // 生成素材名称：VIP + 任务ID + 渠道 + 类型 + 设计师 + 品类 + 商品ID + 设计师姓名 + 序号
+            const materialName = `VIP${String(taskId).padStart(6, '0')}+${channel}+${generationType}+${designer}+${category}+${productId}+${designer}-${9000 + index}`;
+            return materialName;
+        });
     }
 
     closeModal('uploadModal');
@@ -1664,6 +2534,22 @@ function syncToWeimiao(taskId) {
             renderTable();
             alert('同步成功');
         }, 2000);
+    }
+}
+
+// 打开参考图弹窗
+function openReferenceModal(imageUrl, referenceNumber) {
+    document.getElementById('referenceImage').src = imageUrl;
+    document.getElementById('referenceNumber').textContent = referenceNumber;
+    document.getElementById('referenceUrl').textContent = imageUrl;
+    window.currentReferenceUrl = imageUrl;
+    document.getElementById('referenceModal').style.display = 'block';
+}
+
+// 在新标签页打开图片
+function openImageInNewTab() {
+    if (window.currentReferenceUrl) {
+        window.open(window.currentReferenceUrl, '_blank');
     }
 }
 
@@ -1706,6 +2592,9 @@ function closeModal(modalId) {
         if (addButton) {
             addButton.style.display = 'block';
         }
+    } else if (modalId === 'referenceModal') {
+        // 重置参考图弹窗
+        window.currentReferenceUrl = null;
     }
 }
 
@@ -1724,13 +2613,13 @@ window.onclick = function(event) {
 // 切换子任务展开/收起
 // 切换展开内容显示（支持子任务和小红书详情）
 function toggleExpandableContent(taskId) {
-    const button = document.querySelector(`[onclick="toggleExpandableContent(${taskId})"]`);
+    const button = document.querySelector(`[onclick="toggleExpandableContent('${taskId}')"]`);
     const isExpanded = button.getAttribute('data-expanded') === 'true';
     
     // 切换子任务行
-    const subRows = document.querySelectorAll(`tr[data-parent-id="${taskId}"].sub-task-row`);
+    const subRows = document.querySelectorAll(`tr[data-parent-id='${taskId}'].sub-task-row`);
     // 切换小红书详情行
-    const xiaohongshuRows = document.querySelectorAll(`tr[data-parent-id="${taskId}"].xiaohongshu-detail-row`);
+    const xiaohongshuRows = document.querySelectorAll(`tr[data-parent-id='${taskId}'].xiaohongshu-detail-row`);
     
     if (isExpanded) {
         // 收起
