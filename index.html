@@ -296,19 +296,50 @@
                     </div>
                 </div>
                 <div class="bulk-upload-container">
+                    <!-- 固定的上传区域 -->
+                    <div class="bulk-upload-area-fixed" id="bulkUploadAreaFixed">
+                        <div class="bulk-upload-zone" id="bulkUploadZone" 
+                             ondragover="handleBulkDragOver(event)" 
+                             ondragleave="handleBulkDragLeave(event)" 
+                             ondrop="handleBulkDrop(event)"
+                             onclick="triggerBulkFileInput()">
+                            <div class="bulk-upload-content">
+                                <i class="fas fa-cloud-upload-alt bulk-upload-icon"></i>
+                                <h4>批量上传素材</h4>
+                                <p>点击选择文件或拖拽文件到此处</p>
+                                <p class="upload-hint">支持图片和视频文件，系统将根据文件名自动分配到对应任务</p>
+                                <p class="upload-hint">文件名格式：任务ID_素材名称（如：7CrNkAAF_202509031.jpg）</p>
+                                <button class="btn btn-primary" onclick="event.stopPropagation(); triggerBulkFileInput()">
+                                    <i class="fas fa-upload"></i> 选择文件
+                                </button>
+                            </div>
+                            <input type="file" id="bulkFileInput" 
+                                   style="display: none;" 
+                                   multiple 
+                                   accept="image/*,video/*"
+                                   onchange="handleBulkFileSelect(event)">
+                        </div>
+                    </div>
+                    
+                    <!-- 可滚动的表格区域 -->
                     <div class="bulk-upload-table-container">
-                        <table class="bulk-upload-table">
-                            <thead>
-                                <tr>
-                                    <th width="150">任务ID</th>
-                                    <th width="250">素材要求</th>
-                                    <th width="100">素材标签</th>
-                                </tr>
-                            </thead>
-                            <tbody id="bulkUploadTableBody">
-                                <!-- 批量上传行将通过JavaScript动态生成 -->
-                            </tbody>
-                        </table>
+                        <!-- 固定列区域 -->
+                        <div class="fixed-columns-container">
+                            <table class="bulk-upload-table fixed-columns-table">
+                                <tbody id="bulkUploadTableBodyFixed">
+                                    <!-- 固定列内容将通过JavaScript动态生成 -->
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <!-- 可滚动列区域 -->
+                        <div class="scrollable-columns-container">
+                            <table class="bulk-upload-table scrollable-columns-table">
+                                <tbody id="bulkUploadTableBodyScrollable">
+                                    <!-- 可滚动列内容将通过JavaScript动态生成 -->
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
                 
@@ -429,7 +460,6 @@
                         <div class="upload-instructions">
                             <p>点击上传文件,最多支持20条素材(图片或视频)</p>
                             <p>支持上传图片JPG、PNG图片格式或者视频mp4格式</p>
-                            <p>图片小于500kb、视频小于100M</p>
                         </div>
                         <input type="file" id="materialFiles" multiple accept=".jpg,.jpeg,.png,.mp4" style="display: none;">
                     </div>
@@ -511,6 +541,45 @@
                     <i class="fas fa-magic"></i> 解析
                 </button>
                 <button class="btn btn-secondary" onclick="closeModal('batchParseModal')">取消</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 批量上传批量解析弹窗 -->
+    <div id="bulkBatchParseModal" class="modal">
+        <div class="modal-content batch-parse-modal-content">
+            <div class="modal-header">
+                <h3>批量标签解析</h3>
+                <span class="close" onclick="closeModal('bulkBatchParseModal')">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="batch-parse-instructions">
+                    <p>请将素材对应的标签复制到表格中，每列一个标签。支持从Excel等表格软件直接复制粘贴。</p>
+                </div>
+                <div class="batch-parse-table-container">
+                    <table id="bulkBatchParseTable" class="batch-parse-table">
+                        <thead>
+                            <tr>
+                                <th width="60">序号</th>
+                                <th width="200">素材名称</th>
+                                <th>品类</th>
+                                <th>渠道</th>
+                                <th>设计师</th>
+                                <th>商品ID</th>
+                                <th>文本标签</th>
+                            </tr>
+                        </thead>
+                        <tbody id="bulkBatchParseTableBody">
+                            <!-- 动态生成 -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" onclick="parseBulkBatchTags()">
+                    <i class="fas fa-magic"></i> 解析标签
+                </button>
+                <button class="btn btn-secondary" onclick="closeModal('bulkBatchParseModal')">取消</button>
             </div>
         </div>
     </div>

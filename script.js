@@ -452,6 +452,10 @@ function formatHoursForStats(minutes) {
 // 设计师工时统计浮窗相关函数
 function toggleDesignerStats() {
     const panel = document.getElementById('designerStatsPanel');
+    if (!panel || !panel.classList) {
+        return;
+    }
+    
     const isExpanded = panel.classList.contains('expanded');
     
     if (isExpanded) {
@@ -492,6 +496,8 @@ function renderDesignerStats() {
 
 // 批量上传相关变量和函数
 let bulkUploadData = {};
+let allBulkFiles = []; // 统一存储所有上传的素材文件
+let bulkMaterialTags = {}; // 统一存储所有素材的标签信息
 
 // 打开批量上传弹窗
 function openBulkUpload() {
@@ -502,13 +508,15 @@ function openBulkUpload() {
     
     // 初始化批量上传数据
     bulkUploadData = {};
+    allBulkFiles = [];
+    bulkMaterialTags = {};
+    
     selectedTasks.forEach(taskId => {
         const task = taskData.find(t => t.id === taskId);
         if (task) {
             bulkUploadData[taskId] = {
                 task: task,
-                files: [],
-                materialTags: {}
+                assignedFiles: [] // 根据文件名自动分配的文件
             };
         }
     });
@@ -516,75 +524,974 @@ function openBulkUpload() {
     document.getElementById('selectedTaskCount').textContent = selectedTasks.length;
     renderBulkUploadTable();
     document.getElementById('bulkUploadModal').style.display = 'block';
+    
 }
+
 
 // 渲染批量上传表格
 function renderBulkUploadTable() {
-    const tbody = document.getElementById('bulkUploadTableBody');
-    tbody.innerHTML = '';
+    const tbodyFixed = document.getElementById('bulkUploadTableBodyFixed');
+    const tbodyScrollable = document.getElementById('bulkUploadTableBodyScrollable');
     
+    tbodyFixed.innerHTML = '';
+    tbodyScrollable.innerHTML = '';
+    
+    // 添加固定列表格头部行
+    const headerRowFixed = document.createElement('tr');
+    headerRowFixed.className = 'bulk-upload-header-row';
+    headerRowFixed.innerHTML = `
+        <th width="120">任务ID</th>
+        <th width="300">任务要求</th>
+        <th width="250">素材名</th>
+    `;
+    tbodyFixed.appendChild(headerRowFixed);
+    
+    // 添加可滚动列表格头部行
+    const headerRowScrollable = document.createElement('tr');
+    headerRowScrollable.className = 'bulk-upload-header-row';
+    
+    // 动态生成标签列标题（默认显示10个，可以根据需要调整）
+    const defaultTagCount = 10;
+    let tagHeaders = '';
+    for (let i = 1; i <= defaultTagCount; i++) {
+        tagHeaders += `<th width="100">标签${i}</th>`;
+    }
+    
+    // 添加"添加标签列"按钮
+    tagHeaders += `<th width="120" class="add-tag-column-header">
+        <button class="btn btn-sm btn-outline-primary" onclick="addTagColumn()" title="添加标签列">
+            <i class="fas fa-plus"></i> 添加标签
+        </button>
+    </th>`;
+    
+    headerRowScrollable.innerHTML = tagHeaders;
+    tbodyScrollable.appendChild(headerRowScrollable);
+    
+    // 添加任务列表 - 合并相同任务ID和任务要求的显示
     selectedTasks.forEach(taskId => {
         const uploadData = bulkUploadData[taskId];
         const task = uploadData.task;
         
-        const row = document.createElement('tr');
-        row.className = 'bulk-upload-row';
-        row.dataset.taskId = taskId;
-        row.setAttribute('ondrop', `handleRowDrop(event, '${taskId}')`);
-        row.setAttribute('ondragover', 'handleRowDragOver(event)');
-        row.setAttribute('ondragleave', 'handleRowDragLeave(event)');
-        row.innerHTML = `
-            <td class="task-id-cell">
-                <div class="task-id-container">
-                    <button class="btn btn-sm btn-outline-primary upload-btn" 
-                            onclick="triggerFileInput('${taskId}')" 
-                            title="点击上传素材">
-                        <i class="fas fa-upload"></i>
-                    </button>
+        // 获取该任务的素材列表
+        const taskFiles = allBulkFiles.filter(file => file.taskId === taskId);
+        
+        if (taskFiles.length > 0) {
+            // 如果有素材，为每个素材创建一行，但合并任务ID和任务要求
+            taskFiles.forEach((file, index) => {
+                // 创建固定列行
+                const rowFixed = document.createElement('tr');
+                rowFixed.className = 'bulk-upload-row';
+                rowFixed.dataset.taskId = taskId;
+                rowFixed.dataset.fileIndex = index;
+                
+                // 创建可滚动列行
+                const rowScrollable = document.createElement('tr');
+                rowScrollable.className = 'bulk-upload-row';
+                rowScrollable.dataset.taskId = taskId;
+                rowScrollable.dataset.fileIndex = index;
+                
+                // 提取素材名称（去掉任务ID前缀）
+                const materialName = file.name.replace(`${taskId}_`, '');
+                
+                // 生成动态数量的标签单元格（直接可编辑）
+                let tagInputs = '';
+                for (let i = 1; i <= defaultTagCount; i++) {
+                    tagInputs += `
+                        <td class="tag-cell" 
+                            contenteditable="true" 
+                            data-task-id="${taskId}" 
+                            data-file-index="${index}" 
+                            data-tag-index="${i}"
+                            data-placeholder="标签${i}">
+                        </td>
+                    `;
+                }
+                
+                // 如果是第一个素材，显示任务ID和任务要求
+                if (index === 0) {
+                    rowFixed.innerHTML = `
+                        <td class="task-id-cell" rowspan="${taskFiles.length}">
+                            <span class="task-id-text">${taskId}</span>
+                        </td>
+                        <td class="task-requirements" rowspan="${taskFiles.length}">
+                            <div class="requirements-horizontal">
+                                <span class="requirement-badge">${task.materialQuantity || 1}个</span>
+                                <span class="requirement-badge">${formatMaterialSize(task.materialSize, task.channel)}</span>
+                                <span class="requirement-badge">${task.generationType}</span>
+                            </div>
+                        </td>
+                        <td class="material-name-cell">
+                            <span class="material-name-text">${materialName}</span>
+                        </td>
+                    `;
+                } else {
+                    // 其他素材行只显示素材名
+                    rowFixed.innerHTML = `
+                        <td class="material-name-cell">
+                            <span class="material-name-text">${materialName}</span>
+                        </td>
+                    `;
+                }
+                
+                // 可滚动列始终显示标签输入框，并添加一个空单元格对应"添加标签列"按钮
+                rowScrollable.innerHTML = tagInputs + '<td class="tag-cell add-tag-column-cell"></td>';
+                
+                tbodyFixed.appendChild(rowFixed);
+                tbodyScrollable.appendChild(rowScrollable);
+            });
+        } else {
+            // 如果没有素材，显示任务信息但素材名为空
+            const rowFixed = document.createElement('tr');
+            rowFixed.className = 'bulk-upload-row';
+            rowFixed.dataset.taskId = taskId;
+            
+            const rowScrollable = document.createElement('tr');
+            rowScrollable.className = 'bulk-upload-row';
+            rowScrollable.dataset.taskId = taskId;
+            
+            // 生成动态数量的空标签单元格（直接可编辑）
+            let emptyTagInputs = '';
+            for (let i = 1; i <= defaultTagCount; i++) {
+                emptyTagInputs += `
+                    <td class="tag-cell" 
+                        contenteditable="true" 
+                        data-task-id="${taskId}" 
+                        data-file-index="0" 
+                        data-tag-index="${i}"
+                        data-placeholder="标签${i}">
+                    </td>
+                `;
+            }
+            
+            rowFixed.innerHTML = `
+                <td class="task-id-cell">
                     <span class="task-id-text">${taskId}</span>
-                    <div class="uploaded-files-mini" id="uploadedFiles_${taskId}"></div>
+                </td>
+                <td class="task-requirements">
+                    <div class="requirements-horizontal">
+                        <span class="requirement-badge">${task.materialQuantity || 1}个</span>
+                        <span class="requirement-badge">${formatMaterialSize(task.materialSize, task.channel)}</span>
+                        <span class="requirement-badge">${task.generationType}</span>
+                    </div>
+                </td>
+                <td class="material-name-cell">
+                    <span class="material-name-text" style="color: #999;">暂无素材</span>
+                </td>
+            `;
+            
+            rowScrollable.innerHTML = emptyTagInputs + '<td class="tag-cell add-tag-column-cell"></td>';
+            
+            tbodyFixed.appendChild(rowFixed);
+            tbodyScrollable.appendChild(rowScrollable);
+        }
+    });
+}
+
+// 添加标签列功能
+function addTagColumn() {
+    // 获取当前标签列数
+    const currentTagCount = document.querySelectorAll('.scrollable-columns-table th:not(.add-tag-column-header)').length;
+    const newTagIndex = currentTagCount + 1;
+    
+    // 在"添加标签列"按钮前插入新的标签列标题
+    const headerRow = document.querySelector('.scrollable-columns-table .bulk-upload-header-row');
+    const addButtonTh = headerRow.querySelector('.add-tag-column-header');
+    const newHeaderTh = document.createElement('th');
+    newHeaderTh.width = '100';
+    newHeaderTh.textContent = `标签${newTagIndex}`;
+    headerRow.insertBefore(newHeaderTh, addButtonTh);
+    
+    // 为所有数据行添加新的标签输入框
+    const dataRows = document.querySelectorAll('.scrollable-columns-table .bulk-upload-row');
+    dataRows.forEach(row => {
+        const addButtonCell = row.querySelector('.add-tag-column-cell');
+        const newTagCell = document.createElement('td');
+        newTagCell.className = 'tag-cell';
+        
+        // 获取任务ID和文件索引
+        const taskId = row.dataset.taskId;
+        const fileIndex = row.dataset.fileIndex || '0';
+        
+        newTagCell.setAttribute('contenteditable', 'true');
+        newTagCell.setAttribute('data-task-id', taskId);
+        newTagCell.setAttribute('data-file-index', fileIndex);
+        newTagCell.setAttribute('data-tag-index', newTagIndex);
+        newTagCell.setAttribute('data-placeholder', `标签${newTagIndex}`);
+        
+        row.insertBefore(newTagCell, addButtonCell);
+    });
+}
+
+// 为标签单元格添加事件监听
+function addTagCellEventListeners() {
+    // 为所有标签单元格添加事件监听
+    document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('tag-cell')) {
+            e.target.focus();
+        }
+    });
+    
+    // 处理标签单元格的输入事件
+    document.addEventListener('input', function(e) {
+        if (e.target.classList.contains('tag-cell')) {
+            // 可以在这里添加实时保存或其他处理逻辑
+            console.log('标签更新:', e.target.textContent);
+        }
+    });
+    
+    // 处理标签单元格的失焦事件
+    document.addEventListener('blur', function(e) {
+        if (e.target.classList.contains('tag-cell')) {
+            // 可以在这里添加保存逻辑
+            console.log('标签保存:', e.target.textContent);
+        }
+    }, true);
+}
+
+// 页面加载完成后添加事件监听
+document.addEventListener('DOMContentLoaded', function() {
+    addTagCellEventListeners();
+});
+
+// 添加标签功能
+function addTag(taskId, fileIndex) {
+    const input = document.querySelector(`input[data-task-id="${taskId}"][data-file-index="${fileIndex}"]`);
+    const tagValue = input.value.trim();
+    
+    if (tagValue) {
+        // 这里可以添加标签到对应的素材
+        console.log(`为任务 ${taskId} 的素材 ${fileIndex} 添加标签: ${tagValue}`);
+        
+        // 清空输入框
+        input.value = '';
+        
+        // 可以在这里添加标签显示逻辑
+        showNotification(`已为素材添加标签: ${tagValue}`, 'success');
+    } else {
+        showNotification('请输入标签内容', 'warning');
+    }
+}
+
+// 触发批量文件选择
+function triggerBulkFileInput() {
+    const fileInput = document.getElementById('bulkFileInput');
+    if (fileInput) {
+        fileInput.click();
+    }
+}
+
+// 处理批量文件选择
+function handleBulkFileSelect(event) {
+    console.log('handleBulkFileSelect called with files:', event.target.files);
+    const files = Array.from(event.target.files);
+    console.log('Files array:', files);
+    
+    if (files.length === 0) {
+        console.log('No files selected');
+        return;
+    }
+    
+    // 处理每个文件
+    files.forEach(file => {
+        console.log('Processing file:', file.name, 'type:', file.type);
+        
+        // 验证文件
+        if (!validateBulkFile(file)) {
+            console.log('File validation failed for:', file.name);
+            return;
+        }
+        
+        // 从文件名中提取任务ID
+        const taskId = extractTaskIdFromFileName(file.name);
+        if (taskId) {
+            file.taskId = taskId;
+            console.log('Extracted task ID:', taskId, 'from file:', file.name);
+        } else {
+            console.log('Could not extract task ID from file:', file.name);
+            return;
+        }
+        
+        // 添加到全局文件列表
+        allBulkFiles.push(file);
+        console.log('File added to allBulkFiles:', file.name);
+        
+        // 初始化标签信息
+        bulkMaterialTags[file.name] = {
+            name: file.name,
+            category: '',
+            channel: '',
+            designer: '',
+            productId: '',
+            textTags: ''
+        };
+    });
+    
+    console.log('Total files in allBulkFiles:', allBulkFiles.length);
+    
+    // 重新渲染表格以显示新上传的素材
+    renderBulkUploadTable();
+    
+    // 显示通知
+    showNotification(`成功上传 ${files.length} 个文件`, 'success');
+    
+    // 清空文件输入
+    event.target.value = '';
+}
+
+// 从文件名中提取任务ID
+function extractTaskIdFromFileName(fileName) {
+    // 文件名格式：任务ID_素材名称（如：7CrNkAAF_202509031.jpg）
+    const match = fileName.match(/^([^_]+)_/);
+    return match ? match[1] : null;
+}
+
+// 处理批量拖拽悬停
+function handleBulkDragOver(event) {
+    event.preventDefault();
+    if (event.currentTarget && event.currentTarget.classList) {
+        event.currentTarget.classList.add('drag-over');
+    }
+}
+
+// 处理批量拖拽离开
+function handleBulkDragLeave(event) {
+    if (event.currentTarget && event.currentTarget.classList) {
+        event.currentTarget.classList.remove('drag-over');
+    }
+}
+
+// 处理批量拖拽放置
+function handleBulkDrop(event) {
+    event.preventDefault();
+    if (event.currentTarget && event.currentTarget.classList) {
+        event.currentTarget.classList.remove('drag-over');
+    }
+    
+    const files = Array.from(event.dataTransfer.files);
+    console.log('Files dropped:', files);
+    
+    if (files.length === 0) {
+        console.log('No files dropped');
+        return;
+    }
+    
+    // 直接处理文件
+    files.forEach(file => {
+        console.log('Processing dropped file:', file.name, 'type:', file.type);
+        
+        // 验证文件
+        if (!validateBulkFile(file)) {
+            console.log('File validation failed for:', file.name);
+            return;
+        }
+        
+        // 添加到全局文件列表
+        allBulkFiles.push(file);
+        console.log('Dropped file added to allBulkFiles:', file.name);
+        
+        // 初始化标签信息
+        bulkMaterialTags[file.name] = {
+            name: file.name,
+            category: '',
+            channel: '',
+            designer: '',
+            productId: '',
+            textTags: ''
+        };
+    });
+    
+    console.log('Total files in allBulkFiles after drop:', allBulkFiles.length);
+    
+    // 自动分配文件到任务
+    autoAssignFilesToTasks();
+    
+    // 渲染界面
+    renderBulkUploadedFiles();
+    renderAssignedFiles();
+    
+    // 显示通知
+    showNotification(`成功拖拽上传 ${files.length} 个文件`, 'success');
+}
+
+// 添加批量文件 - 优化版本
+function addBulkFiles(files) {
+    console.log('addBulkFiles called with:', files);
+    const validFiles = [];
+    
+    files.forEach(file => {
+        console.log('Processing file:', file.name, 'type:', file.type);
+        // 验证文件
+        if (!validateBulkFile(file)) {
+            console.log('File validation failed for:', file.name);
+            return;
+        }
+        
+        allBulkFiles.push(file);
+        validFiles.push(file);
+        console.log('File added to allBulkFiles:', file.name);
+        
+        // 初始化标签信息
+        bulkMaterialTags[file.name] = {
+            name: file.name,
+            category: '',
+            channel: '',
+            designer: '',
+            productId: '',
+            textTags: ''
+        };
+    });
+    
+    console.log('Valid files count:', validFiles.length);
+    console.log('Total allBulkFiles count:', allBulkFiles.length);
+    
+    if (validFiles.length === 0) {
+        alert('没有有效的文件可以上传');
+        return;
+    }
+    
+    // 自动分配文件到任务
+    autoAssignFilesToTasks();
+    
+    // 渲染界面
+    renderBulkUploadedFiles();
+    renderAssignedFiles();
+    
+    // 显示分配结果提示
+    showAssignmentResult(validFiles);
+}
+
+// 显示文件分配结果
+function showAssignmentResult(files) {
+    let assignedCount = 0;
+    let unassignedFiles = [];
+    
+    files.forEach(file => {
+        let isAssigned = false;
+        selectedTasks.forEach(taskId => {
+            if (bulkUploadData[taskId].assignedFiles.some(f => f.name === file.name)) {
+                isAssigned = true;
+                assignedCount++;
+            }
+        });
+        if (!isAssigned) {
+            unassignedFiles.push(file.name);
+        }
+    });
+    
+    // 显示分配结果
+    if (assignedCount === files.length) {
+        // 所有文件都已分配
+        showNotification(`成功上传 ${files.length} 个文件，已自动分配到对应任务`, 'success');
+    } else if (assignedCount > 0) {
+        // 部分文件已分配
+        showNotification(`成功上传 ${files.length} 个文件，其中 ${assignedCount} 个已自动分配，${unassignedFiles.length} 个未分配`, 'warning');
+        if (unassignedFiles.length > 0) {
+            console.log('未分配的文件：', unassignedFiles);
+        }
+    } else {
+        // 没有文件被分配
+        showNotification(`成功上传 ${files.length} 个文件，但未找到匹配的任务ID，请检查文件名格式`, 'error');
+    }
+}
+
+// 显示通知消息
+function showNotification(message, type = 'info') {
+    // 创建通知元素
+    const notification = document.createElement('div');
+    notification.className = `notification notification-${type}`;
+    notification.innerHTML = `
+        <div class="notification-content">
+            <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'warning' ? 'exclamation-triangle' : type === 'error' ? 'times-circle' : 'info-circle'}"></i>
+            <span>${message}</span>
+        </div>
+    `;
+    
+    // 添加到页面
+    document.body.appendChild(notification);
+    
+    // 显示动画
+    setTimeout(() => {
+        if (notification && notification.classList) {
+            notification.classList.add('show');
+        }
+    }, 100);
+    
+    // 自动隐藏
+    setTimeout(() => {
+        if (notification && notification.classList) {
+            notification.classList.remove('show');
+        }
+        setTimeout(() => {
+            if (notification && document.body.contains(notification)) {
+                document.body.removeChild(notification);
+            }
+        }, 300);
+    }, 3000);
+}
+
+// 验证批量文件
+function validateBulkFile(file) {
+    console.log('Validating file:', file.name, 'type:', file.type);
+    const allowedTypes = ['image/jpeg', 'image/png', 'video/mp4', 'image/jpg'];
+    
+    // 更宽松的文件类型检查
+    const isImage = file.type.startsWith('image/');
+    const isVideo = file.type.startsWith('video/');
+    
+    if (!isImage && !isVideo) {
+        console.log('File type not allowed:', file.type);
+        alert(`不支持的文件格式: ${file.name}`);
+        return false;
+    }
+    
+    console.log('File validation passed for:', file.name);
+    return true;
+}
+
+// 自动分配文件到任务 - 优化版本
+function autoAssignFilesToTasks() {
+    // 清空之前的分配
+    selectedTasks.forEach(taskId => {
+        bulkUploadData[taskId].assignedFiles = [];
+    });
+    
+    // 根据文件名分配文件
+    allBulkFiles.forEach(file => {
+        const fileName = file.name;
+        let assigned = false;
+        
+        // 检查文件名是否包含任务ID（支持多种格式）
+        selectedTasks.forEach(taskId => {
+            // 支持多种文件名格式：
+            // 1. 任务ID_素材名称
+            // 2. 任务ID-素材名称  
+            // 3. 任务ID.素材名称
+            // 4. 任务ID 素材名称
+            const patterns = [
+                new RegExp(`^${taskId}[_\\-\\.]`, 'i'),  // 开头匹配，转义特殊字符
+                new RegExp(`[_\\-\\.]${taskId}[_\\-\\.]`, 'i'), // 中间匹配
+                new RegExp(`[_\\-\\.]${taskId}$`, 'i')   // 结尾匹配
+            ];
+            
+            if (patterns.some(pattern => pattern.test(fileName))) {
+                bulkUploadData[taskId].assignedFiles.push(file);
+                assigned = true;
+                console.log(`文件 ${fileName} 已分配到任务 ${taskId}`);
+            }
+        });
+        
+        // 如果没有匹配到任务ID，显示提示
+        if (!assigned) {
+            console.warn(`文件 ${fileName} 未匹配到任何任务ID，请检查文件名格式`);
+            // 可以选择将未分配的文件显示在界面上供用户手动分配
+        }
+    });
+    
+    // 更新界面显示
+    renderAssignedFiles();
+}
+
+// 渲染批量上传的文件
+function renderBulkUploadedFiles() {
+    console.log('renderBulkUploadedFiles called, allBulkFiles length:', allBulkFiles.length);
+    const container = document.getElementById('bulkUploadedFiles');
+    const grid = document.getElementById('bulkFilesGrid');
+    
+    console.log('Container element:', container);
+    console.log('Grid element:', grid);
+    
+    if (allBulkFiles.length === 0) {
+        if (container) {
+            container.style.display = 'none';
+        }
+        return;
+    }
+    
+    if (container) {
+        container.style.display = 'block';
+        const h5 = container.querySelector('h5');
+        if (h5) {
+            h5.textContent = `已上传素材 (${allBulkFiles.length}个)`;
+        }
+    }
+    
+    if (grid) {
+        grid.innerHTML = allBulkFiles.map((file, index) => `
+            <div class="bulk-file-item" data-file-name="${file.name}">
+                <div class="bulk-file-preview">
+                    ${file.type.startsWith('image/') 
+                        ? `<img src="${URL.createObjectURL(file)}" alt="预览">`
+                        : `<video src="${URL.createObjectURL(file)}" muted></video>`
+                    }
                 </div>
-                <input type="file" id="fileInput_${taskId}" 
-                       style="display: none;" 
-                       multiple 
-                       accept="image/*,video/*"
-                       onchange="handleFileSelect(event, '${taskId}')">
-            </td>
-            <td class="task-requirements">
-                <div class="requirements-horizontal">
-                    <span class="requirement-badge">${task.materialQuantity || 1}个</span>
-                    <span class="requirement-badge">${formatMaterialSize(task.materialSize, task.channel)}</span>
-                    <span class="requirement-badge">${task.generationType}</span>
+                <div class="bulk-file-info">
+                    <div class="bulk-file-name" title="${file.name}">${file.name}</div>
+                    <div class="bulk-file-assignment">
+                        ${getFileAssignmentInfo(file.name)}
+                    </div>
                 </div>
-            </td>
-            <td class="material-tags-container" id="materialTags_${taskId}">
-                <button class="btn btn-sm btn-outline-primary tags-expand-btn" 
-                        onclick="toggleTagsExpansion('${taskId}')" 
-                        id="tagsBtn_${taskId}">
-                    <i class="fas fa-tags"></i> 标签
-                    <span class="tags-count" id="tagsCount_${taskId}">0</span>
+                <button class="bulk-file-remove" onclick="removeBulkFile('${file.name}')" title="移除文件">
+                    <i class="fas fa-times"></i>
                 </button>
-            </td>
+            </div>
+        `).join('');
+        console.log('Grid innerHTML updated');
+    } else {
+        console.error('Grid element not found!');
+    }
+}
+
+// 获取文件分配信息
+function getFileAssignmentInfo(fileName) {
+    let assignmentInfo = '未分配';
+    
+    selectedTasks.forEach(taskId => {
+        const assignedFiles = bulkUploadData[taskId].assignedFiles;
+        if (assignedFiles.some(file => file.name === fileName)) {
+            assignmentInfo = `已分配到任务 ${taskId}`;
+        }
+    });
+    
+    return assignmentInfo;
+}
+
+// 渲染已分配的文件
+function renderAssignedFiles() {
+    selectedTasks.forEach(taskId => {
+        const container = document.getElementById(`assignedFiles_${taskId}`);
+        const assignedFiles = bulkUploadData[taskId].assignedFiles;
+        
+        // 更新迷你预览
+        if (assignedFiles.length === 0) {
+            container.innerHTML = '';
+        } else {
+            container.innerHTML = assignedFiles.map(file => `
+                <div class="assigned-file-mini" title="${file.name}">
+                    <img src="${URL.createObjectURL(file)}" class="file-preview-mini" alt="预览">
+                </div>
+            `).join('');
+        }
+        
+        // 更新已上传素材展示区域
+        updateUploadedMaterialsDisplay(taskId, assignedFiles);
+        
+        // 更新标签按钮状态
+        const tagsBtn = document.getElementById(`tagsBtn_${taskId}`);
+        const tagsCount = document.getElementById(`tagsCount_${taskId}`);
+        if (tagsBtn && tagsCount) {
+            tagsCount.textContent = assignedFiles.length;
+            tagsBtn.disabled = assignedFiles.length === 0;
+        }
+    });
+}
+
+// 更新已上传素材展示
+function updateUploadedMaterialsDisplay(taskId, assignedFiles) {
+    const materialsSection = document.getElementById(`uploadedMaterials_${taskId}`);
+    const materialsCount = document.getElementById(`materialsCount_${taskId}`);
+    const materialsList = document.getElementById(`materialsList_${taskId}`);
+    
+    if (!materialsSection || !materialsCount || !materialsList) {
+        return;
+    }
+    
+    if (assignedFiles.length === 0) {
+        materialsSection.style.display = 'none';
+        return;
+    }
+    
+    // 显示素材区域
+    materialsSection.style.display = 'block';
+    materialsCount.textContent = `${assignedFiles.length}个`;
+    
+    // 渲染素材列表
+          materialsList.innerHTML = assignedFiles.map((file, index) => {
+              const tags = bulkMaterialTags[file.name] || {};
+              return `
+                  <div class="material-batch-row" data-file-name="${file.name}">
+                      <div class="material-batch-content">
+                          <div class="material-batch-info">
+                              <span class="task-id-label">${taskId}</span>
+                              <span class="material-name-batch">${tags.name || file.name}</span>
+                          </div>
+                          <div class="material-batch-tags">
+                              <input type="text" value="${tags.category || ''}" 
+                                     data-file-name="${file.name}" data-tag-type="category"
+                                     placeholder="品类" class="batch-tag-input">
+                              <input type="text" value="${tags.channel || ''}" 
+                                     data-file-name="${file.name}" data-tag-type="channel"
+                                     placeholder="渠道" class="batch-tag-input">
+                              <input type="text" value="${tags.designer || ''}" 
+                                     data-file-name="${file.name}" data-tag-type="designer"
+                                     placeholder="设计师" class="batch-tag-input">
+                              <input type="text" value="${tags.productId || ''}" 
+                                     data-file-name="${file.name}" data-tag-type="productId"
+                                     placeholder="商品ID" class="batch-tag-input">
+                              <input type="text" value="${tags.textTags || ''}" 
+                                     data-file-name="${file.name}" data-tag-type="textTags"
+                                     placeholder="文本标签" class="batch-tag-input">
+                          </div>
+                          <div class="material-batch-actions">
+                              <button class="btn btn-sm btn-danger" onclick="removeAssignedFile('${file.name}', '${taskId}')" title="移除素材">
+                                  <i class="fas fa-trash"></i>
+                              </button>
+                          </div>
+                      </div>
+                  </div>
+              `;
+          }).join('');
+}
+
+// 更新素材标签
+function updateMaterialTag(fileName, tagType, value) {
+    if (!bulkMaterialTags[fileName]) {
+        bulkMaterialTags[fileName] = {};
+    }
+    bulkMaterialTags[fileName][tagType] = value;
+    console.log(`Updated ${fileName} ${tagType}:`, value);
+}
+
+// 粘贴多列数据到素材标签
+function pasteTagsToRow(fileName) {
+    const pasteModal = document.createElement('div');
+    pasteModal.className = 'modal fade';
+    pasteModal.id = 'pasteTagsModal';
+    pasteModal.innerHTML = `
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">粘贴标签数据 - ${fileName}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">粘贴多列数据（支持制表符分隔）</label>
+                        <textarea class="form-control" id="pasteData" rows="6" 
+                                  placeholder="请粘贴多列数据，每列用制表符分隔，例如：&#10;服装&#9;淘宝&#9;张三&#9;SKU001&#9;春季新品&#10;鞋类&#9;京东&#9;李四&#9;SKU002&#9;运动鞋"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">数据格式说明：</label>
+                        <div class="alert alert-info">
+                            <small>
+                                <strong>支持的格式：</strong><br>
+                                • 制表符分隔：品类\t渠道\t设计师\t商品ID\t文本标签<br>
+                                • 逗号分隔：品类,渠道,设计师,商品ID,文本标签<br>
+                                • 分号分隔：品类;渠道;设计师;商品ID;文本标签<br>
+                                <strong>注意：</strong>只处理第一行数据，多行数据将忽略
+                            </small>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-primary" onclick="processPastedTags('${fileName}')">应用数据</button>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(pasteModal);
+    const modal = new bootstrap.Modal(pasteModal);
+    modal.show();
+    
+    // 监听模态框关闭事件
+    pasteModal.addEventListener('hidden.bs.modal', function() {
+        document.body.removeChild(pasteModal);
+    });
+}
+
+// 处理粘贴的标签数据
+function processPastedTags(fileName) {
+    const pasteData = document.getElementById('pasteData').value.trim();
+    if (!pasteData) {
+        showNotification('请输入要粘贴的数据', 'warning');
+        return;
+    }
+    
+    // 解析数据（支持制表符、逗号、分号分隔）
+    let columns = [];
+    if (pasteData.includes('\t')) {
+        columns = pasteData.split('\t');
+    } else if (pasteData.includes(',')) {
+        columns = pasteData.split(',');
+    } else if (pasteData.includes(';')) {
+        columns = pasteData.split(';');
+    } else {
+        showNotification('请使用制表符、逗号或分号分隔多列数据', 'warning');
+        return;
+    }
+    
+    // 确保有足够的列
+    if (columns.length < 5) {
+        showNotification('数据列数不足，需要5列：品类、渠道、设计师、商品ID、文本标签', 'warning');
+        return;
+    }
+    
+    // 更新标签数据
+    const tagFields = ['category', 'channel', 'designer', 'productId', 'textTags'];
+    tagFields.forEach((field, index) => {
+        if (columns[index]) {
+            updateMaterialTag(fileName, field, columns[index].trim());
+        }
+    });
+    
+    // 关闭模态框
+    const modal = bootstrap.Modal.getInstance(document.getElementById('pasteTagsModal'));
+    modal.hide();
+    
+    // 重新渲染素材显示
+    const taskId = findTaskIdByFileName(fileName);
+    if (taskId) {
+        const assignedFiles = bulkUploadData[taskId].assignedFiles;
+        updateUploadedMaterialsDisplay(taskId, assignedFiles);
+    }
+    
+    showNotification(`已成功应用标签数据到 ${fileName}`, 'success');
+}
+
+// 根据文件名查找任务ID
+function findTaskIdByFileName(fileName) {
+    for (const taskId in bulkUploadData) {
+        if (bulkUploadData[taskId].assignedFiles.some(file => file.name === fileName)) {
+            return taskId;
+        }
+    }
+    return null;
+}
+
+// 清空素材标签
+function clearTagsForFile(fileName) {
+    if (confirm(`确定要清空 ${fileName} 的所有标签吗？`)) {
+        if (bulkMaterialTags[fileName]) {
+            const tagFields = ['category', 'channel', 'designer', 'productId', 'textTags'];
+            tagFields.forEach(field => {
+                bulkMaterialTags[fileName][field] = '';
+            });
+        }
+        
+        // 重新渲染素材显示
+        const taskId = findTaskIdByFileName(fileName);
+        if (taskId) {
+            const assignedFiles = bulkUploadData[taskId].assignedFiles;
+            updateUploadedMaterialsDisplay(taskId, assignedFiles);
+        }
+        
+        showNotification(`已清空 ${fileName} 的标签`, 'info');
+    }
+}
+
+// 打开批量解析模态框
+function openBulkBatchParseModal() {
+    if (allBulkFiles.length === 0) {
+        showNotification('请先上传素材', 'warning');
+        return;
+    }
+    
+    renderBulkBatchParseTable();
+    document.getElementById('bulkBatchParseModal').style.display = 'block';
+}
+
+// 渲染批量解析表格
+function renderBulkBatchParseTable() {
+    const tbody = document.getElementById('bulkBatchParseTableBody');
+    tbody.innerHTML = '';
+    
+    allBulkFiles.forEach((file, index) => {
+        const tags = bulkMaterialTags[file.name] || {};
+        const row = document.createElement('tr');
+        
+        row.innerHTML = `
+            <td>${index + 1}</td>
+            <td class="material-name">${file.name}</td>
+            <td><input type="text" class="bulk-tag-input" data-file-name="${file.name}" data-tag-type="category" placeholder="品类" value="${tags.category || ''}"></td>
+            <td><input type="text" class="bulk-tag-input" data-file-name="${file.name}" data-tag-type="channel" placeholder="渠道" value="${tags.channel || ''}"></td>
+            <td><input type="text" class="bulk-tag-input" data-file-name="${file.name}" data-tag-type="designer" placeholder="设计师" value="${tags.designer || ''}"></td>
+            <td><input type="text" class="bulk-tag-input" data-file-name="${file.name}" data-tag-type="productId" placeholder="商品ID" value="${tags.productId || ''}"></td>
+            <td><input type="text" class="bulk-tag-input" data-file-name="${file.name}" data-tag-type="textTags" placeholder="文本标签" value="${tags.textTags || ''}"></td>
         `;
         tbody.appendChild(row);
     });
 }
 
-// 触发文件选择
-function triggerFileInput(taskId) {
-    console.log('triggerFileInput called with taskId:', taskId);
-    const fileInput = document.getElementById(`fileInput_${taskId}`);
-    console.log('fileInput element:', fileInput);
-    if (fileInput) {
-        try {
-            fileInput.click();
-            console.log('File input clicked successfully');
-        } catch (error) {
-            console.error('Error clicking file input:', error);
+// 解析批量标签
+function parseBulkBatchTags() {
+    const tagInputs = document.querySelectorAll('.bulk-tag-input');
+    let updatedCount = 0;
+    
+    // 收集所有标签数据
+    tagInputs.forEach(input => {
+        const fileName = input.getAttribute('data-file-name');
+        const tagType = input.getAttribute('data-tag-type');
+        const tagValue = input.value.trim();
+        
+        if (fileName && tagType) {
+            if (!bulkMaterialTags[fileName]) {
+                bulkMaterialTags[fileName] = {};
+            }
+            
+            bulkMaterialTags[fileName][tagType] = tagValue;
+            updatedCount++;
         }
-    } else {
-        console.error('File input element not found for taskId:', taskId);
-    }
+    });
+    
+    // 重新渲染所有任务的素材显示
+    selectedTasks.forEach(taskId => {
+        const assignedFiles = bulkUploadData[taskId].assignedFiles;
+        updateUploadedMaterialsDisplay(taskId, assignedFiles);
+    });
+    
+    // 关闭弹窗
+    closeModal('bulkBatchParseModal');
+    
+    showNotification(`批量标签解析完成！已更新 ${updatedCount} 个标签`, 'success');
+}
+
+// 移除已分配的素材
+function removeAssignedFile(fileName, taskId) {
+    // 从任务分配列表中移除
+    bulkUploadData[taskId].assignedFiles = bulkUploadData[taskId].assignedFiles.filter(file => file.name !== fileName);
+    
+    // 从全局文件列表中移除
+    allBulkFiles = allBulkFiles.filter(file => file.name !== fileName);
+    
+    // 从标签信息中移除
+    delete bulkMaterialTags[fileName];
+    
+    // 重新渲染界面
+    renderBulkUploadedFiles();
+    renderAssignedFiles();
+    
+    showNotification(`已移除素材 ${fileName}`, 'info');
+}
+
+// 调试函数：检查DOM元素状态
+function debugDOMState() {
+    console.log('=== DOM状态调试 ===');
+    console.log('bulkUploadZone:', document.getElementById('bulkUploadZone'));
+    console.log('bulkFileInput:', document.getElementById('bulkFileInput'));
+    console.log('bulkUploadedFiles:', document.getElementById('bulkUploadedFiles'));
+    console.log('bulkFilesGrid:', document.getElementById('bulkFilesGrid'));
+    console.log('selectedTasks:', selectedTasks);
+    console.log('bulkUploadData:', bulkUploadData);
+    console.log('allBulkFiles:', allBulkFiles);
+}
+
+// 移除批量文件
+function removeBulkFile(fileName) {
+    // 从全局文件列表中移除
+    allBulkFiles = allBulkFiles.filter(file => file.name !== fileName);
+    
+    // 从所有任务的分配列表中移除
+    selectedTasks.forEach(taskId => {
+        bulkUploadData[taskId].assignedFiles = bulkUploadData[taskId].assignedFiles.filter(file => file.name !== fileName);
+    });
+    
+    // 从标签信息中移除
+    delete bulkMaterialTags[fileName];
+    
+    // 重新渲染界面
+    renderBulkUploadedFiles();
+    renderAssignedFiles();
 }
 
 // 处理文件选择
@@ -596,18 +1503,24 @@ function handleFileSelect(event, taskId) {
 // 处理拖拽悬停
 function handleDragOver(event) {
     event.preventDefault();
-    event.currentTarget.classList.add('drag-over');
+    if (event.currentTarget && event.currentTarget.classList) {
+        event.currentTarget.classList.add('drag-over');
+    }
 }
 
 // 处理拖拽离开
 function handleDragLeave(event) {
-    event.currentTarget.classList.remove('drag-over');
+    if (event.currentTarget && event.currentTarget.classList) {
+        event.currentTarget.classList.remove('drag-over');
+    }
 }
 
 // 处理拖拽放置
 function handleDrop(event, taskId) {
     event.preventDefault();
-    event.currentTarget.classList.remove('drag-over');
+    if (event.currentTarget && event.currentTarget.classList) {
+        event.currentTarget.classList.remove('drag-over');
+    }
     
     const files = Array.from(event.dataTransfer.files);
     addFilesToTask(files, taskId);
@@ -616,18 +1529,24 @@ function handleDrop(event, taskId) {
 // 处理任务行拖拽悬停
 function handleRowDragOver(event) {
     event.preventDefault();
-    event.currentTarget.classList.add('row-drag-over');
+    if (event.currentTarget && event.currentTarget.classList) {
+        event.currentTarget.classList.add('row-drag-over');
+    }
 }
 
 // 处理任务行拖拽离开
 function handleRowDragLeave(event) {
-    event.currentTarget.classList.remove('row-drag-over');
+    if (event.currentTarget && event.currentTarget.classList) {
+        event.currentTarget.classList.remove('row-drag-over');
+    }
 }
 
 // 处理任务行拖拽放置
 function handleRowDrop(event, taskId) {
     event.preventDefault();
-    event.currentTarget.classList.remove('row-drag-over');
+    if (event.currentTarget && event.currentTarget.classList) {
+        event.currentTarget.classList.remove('row-drag-over');
+    }
     
     const files = Array.from(event.dataTransfer.files);
     addFilesToTask(files, taskId);
@@ -694,26 +1613,87 @@ function renderMaterialTags(taskId) {
     }
 }
 
-// 切换标签展开面板
-function toggleTagsExpansion(taskId) {
+// 切换批量标签展开面板
+function toggleBulkTagsExpansion(taskId) {
     const panel = document.getElementById('tagsExpansionPanel');
     const title = document.getElementById('tagsPanelTitle');
     const uploadData = bulkUploadData[taskId];
     
-    if (!uploadData || uploadData.files.length === 0) {
+    if (!uploadData || uploadData.assignedFiles.length === 0) {
         alert('该任务暂无素材，请先上传素材');
         return;
     }
     
     title.textContent = `任务 ${taskId} - 素材标签设置`;
-    renderTagsTable(taskId);
+    renderBulkTagsTable(taskId);
     
     // 显示面板
     panel.style.display = 'block';
     panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
-// 渲染标签表格
+// 渲染批量标签表格
+function renderBulkTagsTable(taskId) {
+    const tbody = document.getElementById('tagsTableBody');
+    const uploadData = bulkUploadData[taskId];
+    
+    if (!uploadData || uploadData.assignedFiles.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: #999;">暂无素材</td></tr>';
+        return;
+    }
+    
+    tbody.innerHTML = uploadData.assignedFiles.map(file => {
+        const tags = bulkMaterialTags[file.name];
+        return `
+            <tr class="tag-row">
+                <td class="preview-cell">
+                    ${file.type.startsWith('image/') 
+                        ? `<img src="${URL.createObjectURL(file)}" class="material-preview-table" alt="预览">`
+                        : `<video src="${URL.createObjectURL(file)}" class="material-preview-table" muted></video>`
+                    }
+                </td>
+                <td class="name-cell">
+                    <input type="text" class="form-control form-control-sm" 
+                           value="${tags.name}" 
+                           onchange="updateBulkMaterialName('${file.name}', this.value)"
+                           placeholder="素材名称">
+                </td>
+                <td class="category-cell">
+                    <input type="text" class="form-control form-control-sm" 
+                           value="${tags.category}"
+                           onchange="updateBulkMaterialTag('${file.name}', 'category', this.value)"
+                           placeholder="品类">
+                </td>
+                <td class="channel-cell">
+                    <input type="text" class="form-control form-control-sm" 
+                           value="${tags.channel}"
+                           onchange="updateBulkMaterialTag('${file.name}', 'channel', this.value)"
+                           placeholder="渠道">
+                </td>
+                <td class="designer-cell">
+                    <input type="text" class="form-control form-control-sm" 
+                           value="${tags.designer}"
+                           onchange="updateBulkMaterialTag('${file.name}', 'designer', this.value)"
+                           placeholder="设计师">
+                </td>
+                <td class="product-cell">
+                    <input type="text" class="form-control form-control-sm" 
+                           value="${tags.productId}"
+                           onchange="updateBulkMaterialTag('${file.name}', 'productId', this.value)"
+                           placeholder="商品ID">
+                </td>
+                <td class="text-tags-cell">
+                    <input type="text" class="form-control form-control-sm" 
+                           value="${tags.textTags}"
+                           onchange="updateBulkMaterialTag('${file.name}', 'textTags', this.value)"
+                           placeholder="文本标签">
+                </td>
+            </tr>
+        `;
+    }).join('');
+}
+
+// 渲染标签表格（保留原有函数以兼容）
 function renderTagsTable(taskId) {
     const tbody = document.getElementById('tagsTableBody');
     const uploadData = bulkUploadData[taskId];
@@ -781,10 +1761,12 @@ function updateUploadArea(taskId) {
     const uploadArea = document.getElementById(`uploadArea_${taskId}`);
     const uploadData = bulkUploadData[taskId];
     
-    if (uploadData.files.length > 0) {
-        uploadArea.classList.add('has-files');
-    } else {
-        uploadArea.classList.remove('has-files');
+    if (uploadArea && uploadArea.classList && uploadData) {
+        if (uploadData.files && uploadData.files.length > 0) {
+            uploadArea.classList.add('has-files');
+        } else {
+            uploadArea.classList.remove('has-files');
+        }
     }
 }
 
@@ -800,7 +1782,21 @@ function removeFile(fileName, taskId) {
     renderMaterialTags(taskId);
 }
 
-// 更新素材名称
+// 更新批量素材名称
+function updateBulkMaterialName(fileName, newName) {
+    if (bulkMaterialTags[fileName]) {
+        bulkMaterialTags[fileName].name = newName;
+    }
+}
+
+// 更新批量素材标签
+function updateBulkMaterialTag(fileName, tagType, value) {
+    if (bulkMaterialTags[fileName]) {
+        bulkMaterialTags[fileName][tagType] = value;
+    }
+}
+
+// 更新素材名称（保留原有函数以兼容）
 function updateMaterialName(fileName, newName, taskId) {
     const uploadData = bulkUploadData[taskId];
     if (uploadData && uploadData.materialTags[fileName]) {
@@ -808,7 +1804,7 @@ function updateMaterialName(fileName, newName, taskId) {
     }
 }
 
-// 更新素材标签
+// 更新素材标签（保留原有函数以兼容）
 function updateMaterialTag(fileName, tagType, value, taskId) {
     const uploadData = bulkUploadData[taskId];
     if (uploadData && uploadData.materialTags[fileName]) {
@@ -819,35 +1815,42 @@ function updateMaterialTag(fileName, tagType, value, taskId) {
 // 清空所有上传
 function clearAllUploads() {
     if (confirm('确定要清空所有上传的素材吗？')) {
+        // 清空全局文件列表
+        allBulkFiles = [];
+        bulkMaterialTags = {};
+        
+        // 清空所有任务的分配文件
         selectedTasks.forEach(taskId => {
             const uploadData = bulkUploadData[taskId];
             if (uploadData) {
-                uploadData.files = [];
-                uploadData.materialTags = {};
+                uploadData.assignedFiles = [];
             }
-            renderUploadedFiles(taskId);
-            renderMaterialTags(taskId);
-            updateUploadArea(taskId);
         });
+        
+        // 重新渲染界面
+        renderBulkUploadedFiles();
+        renderAssignedFiles();
     }
 }
 
 // 确认批量上传
 function confirmBulkUpload() {
-    let hasFiles = false;
-    let totalFiles = 0;
+    if (allBulkFiles.length === 0) {
+        alert('请先上传素材');
+        return;
+    }
     
-    // 检查是否有文件上传
+    // 检查是否有任务分配了素材
+    let hasAssignedFiles = false;
     selectedTasks.forEach(taskId => {
         const uploadData = bulkUploadData[taskId];
-        if (uploadData && uploadData.files.length > 0) {
-            hasFiles = true;
-            totalFiles += uploadData.files.length;
+        if (uploadData && uploadData.assignedFiles.length > 0) {
+            hasAssignedFiles = true;
         }
     });
     
-    if (!hasFiles) {
-        alert('请至少为一个任务上传素材');
+    if (!hasAssignedFiles) {
+        alert('没有素材被分配到任何任务，请检查文件名是否包含任务ID');
         return;
     }
     
@@ -880,13 +1883,13 @@ function confirmBulkUpload() {
             // 上传完成，更新任务状态
             selectedTasks.forEach(taskId => {
                 const uploadData = bulkUploadData[taskId];
-                if (uploadData && uploadData.files.length > 0) {
+                if (uploadData && uploadData.assignedFiles.length > 0) {
                     const task = taskData.find(t => t.id === taskId);
                     if (task) {
                         task.status = 'uploaded';
                         task.updateTime = new Date().toLocaleString('zh-CN');
-                        task.uploadedMaterials = uploadData.files.map((file, index) => {
-                            const tags = uploadData.materialTags[file.name];
+                        task.uploadedMaterials = uploadData.assignedFiles.map((file, index) => {
+                            const tags = bulkMaterialTags[file.name];
                             const taskInfo = task;
                             const designer = tags.designer || taskInfo.designer || '未知设计师';
                             const category = tags.category || taskInfo.productCategory;
@@ -903,6 +1906,9 @@ function confirmBulkUpload() {
             renderTable();
             
             setTimeout(() => {
+                // 处理上传完成后的逻辑
+                handleBulkUploadComplete();
+                
                 alert('批量上传完成！');
                 closeModal('bulkUploadModal');
                 document.getElementById('uploadProgress').style.display = 'none';
@@ -912,6 +1918,89 @@ function confirmBulkUpload() {
             }, 1000);
         }
     }, updateInterval);
+}
+
+// 处理批量上传完成后的逻辑
+function handleBulkUploadComplete() {
+    console.log('批量上传完成，开始处理后续逻辑...');
+    
+    // 统计上传结果
+    let totalUploaded = 0;
+    let taskUploadSummary = {};
+    
+    selectedTasks.forEach(taskId => {
+        const uploadData = bulkUploadData[taskId];
+        if (uploadData && uploadData.assignedFiles.length > 0) {
+            totalUploaded += uploadData.assignedFiles.length;
+            taskUploadSummary[taskId] = {
+                count: uploadData.assignedFiles.length,
+                files: uploadData.assignedFiles.map(f => f.name)
+            };
+        }
+    });
+    
+    console.log('上传统计:', {
+        totalFiles: totalUploaded,
+        taskSummary: taskUploadSummary
+    });
+    
+    // 更新任务数据（模拟）
+    selectedTasks.forEach(taskId => {
+        const task = taskData.find(t => t.id === taskId);
+        if (task) {
+            const uploadData = bulkUploadData[taskId];
+            if (uploadData && uploadData.assignedFiles.length > 0) {
+                // 更新任务状态为"首次生成中"
+                task.status = 'generating';
+                task.updateTime = new Date().toLocaleString('zh-CN', {
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit'
+                }).replace(/\//g, '-');
+                
+                // 添加素材信息到任务
+                if (!task.uploadedMaterials) {
+                    task.uploadedMaterials = [];
+                }
+                
+                uploadData.assignedFiles.forEach(file => {
+                    const materialInfo = {
+                        name: file.name,
+                        type: file.type,
+                        size: file.size,
+                        uploadTime: new Date().toLocaleString('zh-CN'),
+                        tags: bulkMaterialTags[file.name] || {}
+                    };
+                    task.uploadedMaterials.push(materialInfo);
+                });
+                
+                console.log(`任务 ${taskId} 已更新，状态: ${task.status}, 素材数量: ${uploadData.assignedFiles.length}`);
+            }
+        }
+    });
+    
+    // 重新渲染表格以显示更新后的状态
+    renderTable();
+    
+    // 清空批量上传数据
+    bulkUploadData = {};
+    allBulkFiles = [];
+    bulkMaterialTags = {};
+    selectedTasks = [];
+    
+    // 更新全选状态
+    const selectAllCheckbox = document.getElementById('selectAll');
+    if (selectAllCheckbox) {
+        selectAllCheckbox.checked = false;
+    }
+    
+    // 更新批量操作按钮状态
+    updateBulkActions();
+    
+    console.log('批量上传后续处理完成');
 }
 
 // 格式化素材名称显示
@@ -1058,7 +2147,7 @@ function renderTable() {
                     <td colspan="20" class="sub-task-content">
                         <div class="sub-task-info">
                             <span class="sub-task-label">设计师: ${subTask.designer}</span>
-                            <span class="sub-task-status">状态: ${statusMap[subTask.status].text}</span>
+                            <span class="sub-task-status">状态: ${statusMap[subTask.status]?.text || subTask.status || '未知状态'}</span>
                             <span class="sub-task-quantity">素材数量: ${subTask.materialQuantity}</span>
                         </div>
                         <div class="sub-task-operations">
@@ -1170,7 +2259,8 @@ function renderTableRow(row, task) {
                 content = formatSubmitter(task.submitter);
                 break;
             case 'status':
-                content = `<span class="status-tag ${statusMap[task.status].class}">${statusMap[task.status].text}</span>`;
+                const statusInfo = statusMap[task.status] || { text: task.status || '未知状态', class: 'status-pending' };
+                content = `<span class="status-tag ${statusInfo.class}">${statusInfo.text}</span>`;
                 break;
             case 'channel':
                 content = task.channel === 'xiaohongshu' ? '小红书' : task.channel;
@@ -1627,7 +2717,7 @@ function exportSingleTask(taskId) {
         // 创建CSV内容
         let csvContent = '创意生产任务列表\n';
         csvContent += '创建时间,期望交付时间,提单人,设计师,创意状态,更新时间,生成ID,生成类型,渠道,素材来源,模板分类,商品数量,素材数量,素材尺寸,商品ID,应用场景,创意策略标签,重新生成建议\n';
-        csvContent += `${task.createTime},${task.expectedTime},${task.submitter},${task.designer || '-'},${statusMap[task.status].text},${task.updateTime},${task.generationId},${task.generationType},${task.channel},${task.materialSource},${task.templateCategory},${task.productQuantity},${task.materialQuantity},${task.materialSize},${task.productId},${task.applicationScenario},${task.creativeStrategyTag},${task.regenerationSuggestion || '-'}\n`;
+        csvContent += `${task.createTime},${task.expectedTime},${task.submitter},${task.designer || '-'},${statusMap[task.status]?.text || task.status || '未知状态'},${task.updateTime},${task.generationId},${task.generationType},${task.channel},${task.materialSource},${task.templateCategory},${task.productQuantity},${task.materialQuantity},${task.materialSize},${task.productId},${task.applicationScenario},${task.creativeStrategyTag},${task.regenerationSuggestion || '-'}\n`;
 
         // 创建下载链接
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -1757,7 +2847,7 @@ function exportTasks() {
     csvContent += '创建时间,期望交付时间,提单人,设计师,创意状态,更新时间,生成ID,生成类型,渠道,素材来源,模板分类,商品数量,素材数量,素材尺寸,商品ID,应用场景,创意策略标签,重新生成建议\n';
     
     selectedTaskData.forEach(task => {
-        csvContent += `${task.createTime},${task.expectedTime},${task.submitter},${task.designer || '-'},${statusMap[task.status].text},${task.updateTime},${task.generationId},${task.generationType},${task.channel},${task.materialSource},${task.templateCategory},${task.productQuantity},${task.materialQuantity},${task.materialSize},${task.productId},${task.applicationScenario},${task.creativeStrategyTag},${task.regenerationSuggestion || '-'}\n`;
+        csvContent += `${task.createTime},${task.expectedTime},${task.submitter},${task.designer || '-'},${statusMap[task.status]?.text || task.status || '未知状态'},${task.updateTime},${task.generationId},${task.generationType},${task.channel},${task.materialSource},${task.templateCategory},${task.productQuantity},${task.materialQuantity},${task.materialSize},${task.productId},${task.applicationScenario},${task.creativeStrategyTag},${task.regenerationSuggestion || '-'}\n`;
     });
 
     // 创建下载链接
@@ -2097,24 +3187,13 @@ function setupUploadZone() {
 // 验证文件
 function validateFile(file) {
     const allowedTypes = ['image/jpeg', 'image/png', 'video/mp4'];
-    const maxImageSize = 500 * 1024; // 500KB
-    const maxVideoSize = 100 * 1024 * 1024; // 100MB
     
     if (!allowedTypes.includes(file.type)) {
         alert(`不支持的文件格式: ${file.name}`);
         return false;
     }
     
-    if (file.type.startsWith('image/') && file.size > maxImageSize) {
-        alert(`图片文件过大: ${file.name}，请选择小于500KB的图片`);
-        return false;
-    }
-    
-    if (file.type === 'video/mp4' && file.size > maxVideoSize) {
-        alert(`视频文件过大: ${file.name}，请选择小于100MB的视频`);
-        return false;
-    }
-    
+    // 移除文件大小限制
     return true;
 }
 

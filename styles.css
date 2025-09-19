@@ -1737,6 +1737,8 @@ input[readonly]:focus {
     width: 95%;
     max-height: 90vh;
     overflow: hidden;
+    display: flex;
+    flex-direction: column;
 }
 
 .bulk-upload-summary {
@@ -1759,21 +1761,109 @@ input[readonly]:focus {
 }
 
 .bulk-upload-container {
-    max-height: 60vh;
-    overflow: hidden;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+/* 固定的上传区域 */
+.bulk-upload-area-fixed {
+    flex-shrink: 0;
+    margin-bottom: 15px;
 }
 
 .bulk-upload-table-container {
-    max-height: 100%;
-    overflow-y: auto;
+    flex: 1;
+    display: flex;
     border: 1px solid #e9ecef;
     border-radius: 8px;
+    max-height: calc(90vh - 300px);
+    overflow: hidden;
+    position: relative;
+}
+
+/* 固定列容器 */
+.fixed-columns-container {
+    flex-shrink: 0;
+    width: 670px; /* 120 + 300 + 250 = 670px */
+    border-right: 2px solid #e9ecef;
+    background: white;
+    z-index: 10;
+}
+
+/* 可滚动列容器 */
+.scrollable-columns-container {
+    flex: 1;
+    overflow-x: auto;
+    overflow-y: hidden;
+    /* 移动端触摸滚动优化 */
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-x;
 }
 
 .bulk-upload-table {
     width: 100%;
     border-collapse: collapse;
     font-size: 14px;
+    table-layout: fixed;
+}
+
+/* 固定列表格样式 */
+.fixed-columns-table {
+    width: 670px;
+}
+
+/* 可滚动列表格样式 */
+.scrollable-columns-table {
+    min-width: auto; /* 根据实际列数自适应 */
+}
+
+/* 固定列宽控制 */
+.fixed-columns-table th:nth-child(1),
+.fixed-columns-table td:nth-child(1) {
+    width: 120px;
+    min-width: 120px;
+}
+
+.fixed-columns-table th:nth-child(2),
+.fixed-columns-table td:nth-child(2) {
+    width: 300px;
+    min-width: 300px;
+}
+
+.fixed-columns-table th:nth-child(3),
+.fixed-columns-table td:nth-child(3) {
+    width: 250px;
+    min-width: 250px;
+}
+
+/* 可滚动列宽控制 */
+.scrollable-columns-table th,
+.scrollable-columns-table td {
+    width: 100px;
+    min-width: 100px;
+}
+
+/* 添加标签列按钮样式 */
+.add-tag-column-header {
+    width: 120px !important;
+    min-width: 120px !important;
+    text-align: center;
+    background: #e3f2fd !important;
+}
+
+.add-tag-column-header .btn {
+    font-size: 11px;
+    padding: 4px 8px;
+    border-radius: 4px;
+}
+
+.add-tag-column-cell {
+    width: 120px !important;
+    min-width: 120px !important;
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
 }
 
 .bulk-upload-table th {
@@ -1788,14 +1878,191 @@ input[readonly]:focus {
     z-index: 10;
 }
 
+/* 动态生成的表格头部样式 */
+.bulk-upload-header-row {
+    background: #f8f9fa;
+}
+
+.bulk-upload-header-row th {
+    background: #f8f9fa;
+    padding: 12px 15px;
+    text-align: left;
+    font-weight: 600;
+    color: #495057;
+    border-bottom: 2px solid #e9ecef;
+    border-top: 2px solid #e9ecef;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
 .bulk-upload-table td {
     padding: 15px;
     border-bottom: 1px solid #e9ecef;
     vertical-align: top;
+    height: 60px; /* 统一行高 */
+}
+
+/* 任务ID单元格样式 */
+.task-id-cell {
+    text-align: left;
+    padding: 12px 8px;
+    font-weight: 600;
+    color: #2c3e50;
+    background-color: #f8f9fa;
+    border-right: 1px solid #e9ecef;
+    vertical-align: middle;
+    height: 60px; /* 统一行高 */
+}
+
+.task-id-text {
+    font-size: 14px;
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+/* 任务要求单元格样式 */
+.task-requirements {
+    padding: 12px 8px;
+    vertical-align: middle;
+    border-right: 1px solid #e9ecef;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    height: 60px; /* 统一行高 */
+}
+
+.requirements-horizontal {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.requirement-badge {
+    background: #e3f2fd;
+    color: #1976d2;
+    padding: 3px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 500;
+    border: 1px solid #bbdefb;
+    white-space: nowrap;
+    display: inline-block;
+    margin-bottom: 2px;
+}
+
+/* 素材名称单元格样式 */
+.material-name-cell {
+    padding: 12px 8px;
+    vertical-align: middle;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    height: 60px; /* 统一行高 */
+}
+
+.material-name-text {
+    font-size: 14px;
+    color: #495057;
+    font-weight: 500;
+}
+
+/* 标签区单元格样式 */
+.material-tags-container {
+    padding: 12px 8px;
+    vertical-align: middle;
+}
+
+.tag-input-group {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.tag-input-group .tag-input {
+    flex: 1;
+    padding: 6px 10px;
+    border: 1px solid #e9ecef;
+    border-radius: 4px;
+    font-size: 13px;
+    background: white;
+    outline: none;
+    transition: all 0.2s;
+}
+
+.tag-input-group .tag-input:focus {
+    border-color: #3498db;
+    box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.1);
+    background-color: #f8f9fa;
+}
+
+.tag-input-group .tag-input::placeholder {
+    color: #adb5bd;
+    font-size: 12px;
+}
+
+.tag-input-group .btn {
+    padding: 6px 10px;
+    font-size: 12px;
+    min-width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* 标签单元格样式 - 直接可编辑 */
+.tag-cell {
+    padding: 12px 8px;
+    border: 1px solid #e9ecef;
+    vertical-align: middle;
+    background-color: white;
+    position: relative;
+    height: 60px; /* 统一行高 */
+    text-align: center;
+    font-size: 12px;
+    transition: all 0.2s ease;
+    cursor: text;
+    outline: none;
+}
+
+.tag-cell:hover {
+    background-color: #f8f9fa;
+    border-color: #3498db;
+}
+
+.tag-cell:focus {
+    background-color: #f8f9fa;
+    border: 2px solid #3498db;
+    box-shadow: inset 0 0 0 1px #3498db;
+}
+
+.tag-cell:empty:before {
+    content: attr(data-placeholder);
+    color: #adb5bd;
+    font-size: 11px;
+    pointer-events: none;
+}
+
+.tag-cell:empty:focus:before {
+    content: '';
 }
 
 .bulk-upload-row:nth-child(even) {
     background-color: #f8f9fa;
+}
+
+/* 合并单元格的视觉分隔 */
+.bulk-upload-row:not(:first-child) .material-name-cell {
+    border-top: 1px solid #e9ecef;
+}
+
+.bulk-upload-row:not(:first-child) .material-tags-container {
+    border-top: 1px solid #e9ecef;
+}
+
+/* 任务组之间的分隔 */
+.bulk-upload-row[data-task-id] + .bulk-upload-row[data-task-id] {
+    border-top: 2px solid #dee2e6;
 }
 
 .bulk-upload-row:hover {
@@ -2299,6 +2566,23 @@ input[readonly]:focus {
     .material-tags-container {
         min-width: 300px;
     }
+    
+    .bulk-upload-zone {
+        padding: 20px 15px;
+        min-height: 100px;
+    }
+    
+    .bulk-upload-icon {
+        font-size: 28px;
+    }
+    
+    .bulk-upload-content h4 {
+        font-size: 14px;
+    }
+    
+    .bulk-upload-content p {
+        font-size: 12px;
+    }
 }
 
 @media (max-width: 768px) {
@@ -2323,9 +2607,132 @@ input[readonly]:focus {
         padding: 6px;
     }
     
-    .upload-area {
+    /* 移动端表格列宽调整 */
+    /* 固定列容器宽度调整 */
+    .fixed-columns-container {
+        width: 350px; /* 80 + 150 + 120 = 350px */
+    }
+    
+    /* 固定列表格宽度调整 */
+    .fixed-columns-table {
+        width: 350px;
+    }
+    
+    /* 固定列宽控制 */
+    .fixed-columns-table th:nth-child(1),
+    .fixed-columns-table td:nth-child(1) {
+        width: 80px;
+        min-width: 80px;
+    }
+    
+    .fixed-columns-table th:nth-child(2),
+    .fixed-columns-table td:nth-child(2) {
+        width: 150px;
+        min-width: 150px;
+    }
+    
+    .fixed-columns-table th:nth-child(3),
+    .fixed-columns-table td:nth-child(3) {
+        width: 120px;
+        min-width: 120px;
+    }
+    
+    /* 可滚动列表格最小宽度调整 */
+    .scrollable-columns-table {
+        min-width: auto; /* 根据实际列数自适应 */
+    }
+    
+    /* 可滚动列宽控制 */
+    .scrollable-columns-table th,
+    .scrollable-columns-table td {
+        width: 60px;
+        min-width: 60px;
+    }
+    
+    /* 移动端添加标签列按钮样式 */
+    .add-tag-column-header {
+        width: 80px !important;
+        min-width: 80px !important;
+    }
+    
+    .add-tag-column-header .btn {
+        font-size: 9px;
+        padding: 2px 4px;
+    }
+    
+    .add-tag-column-cell {
+        width: 80px !important;
+        min-width: 80px !important;
+    }
+    
+    /* 移动端标签输入组优化 */
+    .tag-input-group {
+        flex-direction: column;
+        gap: 4px;
+        align-items: stretch;
+    }
+    
+    .tag-input-group .tag-input {
+        font-size: 11px;
+        padding: 4px 6px;
+    }
+    
+    .tag-input-group .btn {
+        font-size: 10px;
+        padding: 4px 6px;
+        min-width: 28px;
+        height: 28px;
+    }
+    
+    /* 移动端任务要求标签优化 */
+    .requirements-horizontal {
+        flex-direction: column;
+        gap: 2px;
+        align-items: flex-start;
+    }
+    
+    .requirement-badge {
+        font-size: 10px;
+        padding: 2px 6px;
+    }
+    
+    /* 移动端行高调整 */
+    .bulk-upload-table td {
+        height: 50px; /* 移动端统一行高 */
+    }
+    
+    .task-id-cell,
+    .task-requirements,
+    .material-name-cell,
+    .tag-cell {
+        height: 50px; /* 移动端统一行高 */
+    }
+    
+    /* 移动端标签单元格优化 */
+    .tag-cell {
+        font-size: 10px;
+        padding: 8px 4px;
+    }
+    
+    .tag-cell:empty:before {
+        font-size: 9px;
+    }
+    
+    .bulk-upload-zone {
+        padding: 15px 10px;
         min-height: 80px;
-        padding: 10px;
+    }
+    
+    .bulk-upload-icon {
+        font-size: 24px;
+    }
+    
+    .bulk-upload-content h4 {
+        font-size: 13px;
+    }
+    
+    .bulk-upload-content p {
+        font-size: 11px;
     }
     
     .material-tag-row {
@@ -2340,5 +2747,835 @@ input[readonly]:focus {
     
     .modal-actions {
         flex-direction: column;
+    }
+    
+    .bulk-files-grid {
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 10px;
+    }
+    
+    .bulk-file-preview {
+        height: 80px;
+    }
+    
+    /* 素材行响应式优化 */
+    .material-info-row {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 8px;
+        padding: 10px;
+    }
+    
+    .material-details {
+        order: 1;
+    }
+    
+    .material-actions {
+        order: 2;
+        justify-content: center;
+    }
+    
+    .material-preview-small {
+        order: 3;
+        align-self: center;
+        width: 50px;
+        height: 40px;
+    }
+    
+    .material-tags-table {
+        font-size: 10px;
+    }
+    
+    .material-tags-table th,
+    .material-tags-table td {
+        padding: 4px 3px;
+    }
+    
+    .tag-input {
+        font-size: 10px;
+        padding: 4px 6px;
+    }
+    
+    .material-name-row {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 4px;
+    }
+    
+    .material-meta {
+        justify-content: center;
+        gap: 8px;
+    }
+    
+    /* 批量素材行响应式优化 */
+    .material-batch-content {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 8px;
+        padding: 8px;
+    }
+    
+    .material-batch-info {
+        min-width: auto;
+        justify-content: center;
+    }
+    
+    .material-batch-tags {
+        flex-direction: column;
+        gap: 6px;
+    }
+    
+    .batch-tag-input {
+        min-width: auto;
+        width: 100%;
+    }
+    
+    .material-batch-actions {
+        justify-content: center;
+        gap: 6px;
+    }
+    
+    .material-batch-actions .btn {
+        min-width: 28px;
+        height: 28px;
+    }
+    
+    .bulk-files-header {
+        flex-direction: column;
+        gap: 10px;
+        align-items: stretch;
+    }
+    
+    .bulk-files-header .btn {
+        width: 100%;
+    }
+}
+
+/* 批量上传区域样式 */
+
+.bulk-upload-zone {
+    border: 2px dashed #ddd;
+    border-radius: 8px;
+    padding: 30px 20px;
+    text-align: center;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    transition: all 0.3s ease;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    min-height: 120px;
+}
+
+.bulk-upload-zone::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+    transition: left 0.5s;
+}
+
+.bulk-upload-zone:hover::before {
+    left: 100%;
+}
+
+.bulk-upload-zone:hover {
+    border-color: #3498db;
+    background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(52, 152, 219, 0.15);
+}
+
+.bulk-upload-zone.drag-over {
+    border-color: #28a745;
+    background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+    transform: scale(1.02);
+    box-shadow: 0 10px 30px rgba(40, 167, 69, 0.2);
+}
+
+.bulk-upload-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    position: relative;
+    z-index: 1;
+}
+
+.bulk-upload-icon {
+    font-size: 36px;
+    color: #3498db;
+    margin-bottom: 8px;
+    transition: all 0.3s ease;
+    animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-10px); }
+}
+
+.bulk-upload-zone:hover .bulk-upload-icon {
+    color: #2980b9;
+    transform: scale(1.1);
+}
+
+.bulk-upload-content h4 {
+    color: #2c3e50;
+    font-size: 16px;
+    font-weight: 600;
+    margin: 0;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.bulk-upload-content p {
+    color: #666;
+    margin: 0;
+    font-size: 13px;
+    line-height: 1.4;
+}
+
+.upload-hint {
+    color: #999 !important;
+    font-size: 12px !important;
+    font-style: italic;
+    background-color: rgba(255, 255, 255, 0.8);
+    padding: 4px 8px;
+    border-radius: 4px;
+    margin: 2px 0;
+}
+
+/* 批量上传文件网格样式 */
+.bulk-uploaded-files {
+    margin-top: 15px;
+    padding: 15px;
+    background-color: white;
+    border-radius: 6px;
+    border: 1px solid #eee;
+}
+
+.bulk-uploaded-files h5 {
+    margin: 0 0 15px 0;
+    color: #2c3e50;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.bulk-files-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 12px;
+}
+
+.bulk-file-item {
+    position: relative;
+    border: 1px solid #eee;
+    border-radius: 6px;
+    padding: 8px;
+    background-color: white;
+    transition: all 0.2s ease;
+}
+
+.bulk-file-item:hover {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
+}
+
+.bulk-file-preview {
+    width: 100%;
+    height: 100px;
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 8px;
+    background-color: #f8f9fa;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.bulk-file-preview img,
+.bulk-file-preview video {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: cover;
+}
+
+.bulk-file-info {
+    text-align: left;
+}
+
+.bulk-file-name {
+    font-size: 12px;
+    color: #333;
+    font-weight: 500;
+    margin-bottom: 5px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.bulk-file-assignment {
+    font-size: 11px;
+    color: #666;
+    padding: 2px 6px;
+    background-color: #f0f0f0;
+    border-radius: 3px;
+    display: inline-block;
+}
+
+.bulk-file-remove {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    width: 20px;
+    height: 20px;
+    border: none;
+    background-color: rgba(255, 0, 0, 0.8);
+    color: white;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    transition: all 0.2s ease;
+}
+
+.bulk-file-remove:hover {
+    background-color: #ff0000;
+    transform: scale(1.1);
+}
+
+/* 已分配文件迷你显示样式 */
+.assigned-files-mini {
+    display: flex;
+    gap: 5px;
+    margin-top: 5px;
+    flex-wrap: wrap;
+}
+
+.assigned-file-mini {
+    width: 30px;
+    height: 30px;
+    border-radius: 4px;
+    overflow: hidden;
+    border: 1px solid #ddd;
+}
+
+.assigned-file-mini img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* 通知系统样式 */
+.notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 10000;
+    min-width: 300px;
+    max-width: 500px;
+    padding: 15px 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    transform: translateX(100%);
+    opacity: 0;
+    transition: all 0.3s ease;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.notification.show {
+    transform: translateX(0);
+    opacity: 1;
+}
+
+.notification-content {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.notification-content i {
+    font-size: 18px;
+    flex-shrink: 0;
+}
+
+.notification-success {
+    background-color: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+.notification-success i {
+    color: #28a745;
+}
+
+.notification-warning {
+    background-color: #fff3cd;
+    color: #856404;
+    border: 1px solid #ffeaa7;
+}
+
+.notification-warning i {
+    color: #ffc107;
+}
+
+.notification-error {
+    background-color: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+
+.notification-error i {
+    color: #dc3545;
+}
+
+.notification-info {
+    background-color: #d1ecf1;
+    color: #0c5460;
+    border: 1px solid #bee5eb;
+}
+
+.notification-info i {
+    color: #17a2b8;
+}
+
+/* 已上传素材展示区域样式 */
+.uploaded-materials-section {
+    margin-top: 10px;
+    padding: 12px;
+    background-color: #f8f9fa;
+    border-radius: 6px;
+    border: 1px solid #e9ecef;
+}
+
+.materials-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.materials-title {
+    font-weight: 600;
+    color: #495057;
+    font-size: 14px;
+}
+
+.materials-count {
+    background-color: #e3f2fd;
+    color: #1976d2;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.materials-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+/* 新的素材行布局 */
+.material-row {
+    background-color: white;
+    border-radius: 6px;
+    border: 1px solid #e9ecef;
+    overflow: hidden;
+    transition: all 0.2s ease;
+}
+
+.material-row:hover {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.material-info-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    background-color: #fafbfc;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.material-preview-small {
+    flex-shrink: 0;
+    width: 60px;
+    height: 45px;
+    border-radius: 4px;
+    overflow: hidden;
+    background-color: #f8f9fa;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #e9ecef;
+}
+
+.material-preview-small img,
+.material-preview-small video {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: cover;
+}
+
+.material-details {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.material-name-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.material-name-row label {
+    font-size: 12px;
+    font-weight: 500;
+    color: #6c757d;
+    white-space: nowrap;
+}
+
+.material-name-input {
+    flex: 1;
+    padding: 4px 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 12px;
+    background-color: white;
+}
+
+.material-meta {
+    display: flex;
+    gap: 12px;
+    font-size: 11px;
+    color: #6c757d;
+}
+
+.file-size,
+.file-type {
+    background-color: #e9ecef;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-weight: 500;
+}
+
+.material-actions {
+    display: flex;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+.material-actions .btn {
+    padding: 4px 6px;
+    font-size: 11px;
+    border-radius: 4px;
+    min-width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.material-actions .btn i {
+    font-size: 10px;
+}
+
+/* 标签表格行 */
+.material-tags-row {
+    padding: 0;
+    background-color: white;
+}
+
+/* 批量素材行布局 */
+.material-batch-row {
+    background-color: white;
+    border: 1px solid #e9ecef;
+    border-radius: 4px;
+    margin-bottom: 8px;
+    transition: all 0.2s ease;
+}
+
+.material-batch-row:hover {
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+    border-color: #3498db;
+}
+
+.material-batch-content {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+}
+
+.material-batch-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 200px;
+    flex-shrink: 0;
+}
+
+.task-id-label {
+    background-color: #e3f2fd;
+    color: #1976d2;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 11px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.material-name-batch {
+    font-size: 13px;
+    color: #495057;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 150px;
+}
+
+.material-batch-tags {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+}
+
+.batch-tag-input {
+    flex: 1;
+    min-width: 80px;
+    padding: 6px 8px;
+    border: 1px solid #e9ecef;
+    border-radius: 4px;
+    font-size: 12px;
+    background: white;
+    outline: none;
+    transition: all 0.2s;
+}
+
+.batch-tag-input:focus {
+    border-color: #3498db;
+    box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.1);
+    background-color: #f8f9fa;
+}
+
+.batch-tag-input::placeholder {
+    color: #adb5bd;
+    font-size: 11px;
+}
+
+.material-batch-actions {
+    display: flex;
+    gap: 4px;
+    flex-shrink: 0;
+}
+
+.material-batch-actions .btn {
+    padding: 4px 6px;
+    font-size: 11px;
+    border-radius: 4px;
+    min-width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.material-batch-actions .btn i {
+    font-size: 10px;
+}
+
+/* 批量上传文件头部样式 */
+.bulk-files-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.bulk-files-header h5 {
+    margin: 0;
+    color: #2c3e50;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.bulk-files-header .btn {
+    padding: 6px 12px;
+    font-size: 12px;
+}
+
+/* 素材标签表格样式 */
+.material-tags-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+    margin: 0;
+}
+
+.material-tags-table th {
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    padding: 8px 6px;
+    text-align: center;
+    font-weight: 600;
+    color: #495057;
+    font-size: 11px;
+    border-top: none;
+}
+
+.material-tags-table td {
+    border: 1px solid #dee2e6;
+    padding: 6px;
+    vertical-align: middle;
+    border-top: none;
+}
+
+.material-tags-table td:first-child {
+    border-left: none;
+}
+
+.material-tags-table td:last-child {
+    border-right: none;
+}
+
+.material-tags-table th:first-child {
+    border-left: none;
+}
+
+.material-tags-table th:last-child {
+    border-right: none;
+}
+
+.tag-input {
+    width: 100%;
+    border: 1px solid #e9ecef;
+    padding: 6px 8px;
+    font-size: 12px;
+    background: white;
+    outline: none;
+    border-radius: 4px;
+    transition: all 0.2s;
+}
+
+.tag-input:focus {
+    border-color: #3498db;
+    box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.1);
+    background-color: #f8f9fa;
+}
+
+.tag-input::placeholder {
+    color: #adb5bd;
+    font-size: 11px;
+}
+
+/* 粘贴标签模态框样式 */
+#pasteTagsModal .modal-body {
+    padding: 20px;
+}
+
+#pasteTagsModal .form-label {
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 8px;
+}
+
+#pasteTagsModal textarea {
+    font-family: 'Courier New', monospace;
+    font-size: 13px;
+    line-height: 1.4;
+}
+
+#pasteTagsModal .alert {
+    margin-bottom: 0;
+    padding: 12px;
+}
+
+#pasteTagsModal .alert small {
+    line-height: 1.5;
+}
+
+#pasteTagsModal .alert strong {
+    color: #495057;
+}
+
+.tag-section {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.tag-section label {
+    font-size: 11px;
+    font-weight: 500;
+    color: #6c757d;
+}
+
+.tag-section input,
+.tag-section textarea {
+    padding: 4px 8px;
+    border: 1px solid #ddd;
+    border-radius: 3px;
+    font-size: 12px;
+    width: 100%;
+    transition: border-color 0.2s;
+}
+
+.tag-section input:focus,
+.tag-section textarea:focus {
+    outline: none;
+    border-color: #3498db;
+    box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.1);
+}
+
+.tag-section textarea {
+    resize: vertical;
+    min-height: 40px;
+}
+
+.material-actions {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    gap: 8px;
+}
+
+.material-actions .btn {
+    padding: 6px 10px;
+    font-size: 12px;
+    min-width: 80px;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+    .material-item {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .material-preview {
+        width: 100%;
+        height: 120px;
+    }
+    
+    .material-tags {
+        grid-template-columns: 1fr;
+    }
+    
+    .material-actions {
+        flex-direction: row;
+        justify-content: center;
     }
 }
