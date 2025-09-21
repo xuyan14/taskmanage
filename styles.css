@@ -600,6 +600,32 @@ tr:hover {
     overflow-y: auto;
     border: 1px solid #ddd;
     border-radius: 4px;
+    /* 移动端触摸滚动优化 */
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-y;
+}
+
+/* 批量上传标签输入框样式 */
+.bulk-upload-tag-input {
+    width: 100%;
+    padding: 6px 8px;
+    border: 1px solid #e9ecef;
+    border-radius: 4px;
+    font-size: 12px;
+    background: white;
+    outline: none;
+    transition: all 0.2s;
+}
+
+.bulk-upload-tag-input:focus {
+    border-color: #3498db;
+    box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.1);
+    background-color: #f8f9fa;
+}
+
+.bulk-upload-tag-input::placeholder {
+    color: #adb5bd;
+    font-size: 11px;
 }
 
 .batch-parse-table {
@@ -1758,6 +1784,41 @@ input[readonly]:focus {
 .summary-text {
     font-size: 14px;
     color: #495057;
+}
+
+/* 批量上传操作按钮样式 */
+.bulk-upload-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.bulk-upload-actions .btn {
+    font-size: 12px;
+    padding: 6px 12px;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+}
+
+.bulk-upload-actions .btn-success {
+    background-color: #28a745;
+    border-color: #28a745;
+    color: white;
+}
+
+.bulk-upload-actions .btn-success:hover {
+    background-color: #218838;
+    border-color: #1e7e34;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(40, 167, 69, 0.3);
+}
+
+.bulk-upload-actions .btn-success:disabled {
+    background-color: #6c757d;
+    border-color: #6c757d;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
 }
 
 .bulk-upload-container {

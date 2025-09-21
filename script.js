@@ -498,6 +498,7 @@ function renderDesignerStats() {
 let bulkUploadData = {};
 let allBulkFiles = []; // 统一存储所有上传的素材文件
 let bulkMaterialTags = {}; // 统一存储所有素材的标签信息
+let bulkUploadTagData = {}; // 存储批量上传的标签数据
 
 // 打开批量上传弹窗
 function openBulkUpload() {
@@ -685,6 +686,15 @@ function renderBulkUploadTable() {
             tbodyScrollable.appendChild(rowScrollable);
         }
     });
+    
+    // 如果有上传的素材，显示批量解析按钮和确认上传按钮
+    if (allBulkFiles.length > 0) {
+        document.getElementById('bulkParseBtn').style.display = 'inline-block';
+        document.getElementById('confirmUploadBtn').style.display = 'inline-block';
+    } else {
+        document.getElementById('bulkParseBtn').style.display = 'none';
+        document.getElementById('confirmUploadBtn').style.display = 'none';
+    }
 }
 
 // 添加标签列功能
@@ -752,6 +762,167 @@ function addTagCellEventListeners() {
 document.addEventListener('DOMContentLoaded', function() {
     addTagCellEventListeners();
 });
+
+// 打开批量上传批量解析模态框
+function openBulkUploadBatchParseModal() {
+    // 检查是否有上传的素材
+    if (allBulkFiles.length === 0) {
+        showNotification('请先上传素材文件', 'warning');
+        return;
+    }
+    
+    // 渲染批量解析表格
+    renderBulkUploadBatchParseTable();
+    
+    document.getElementById('bulkUploadBatchParseModal').style.display = 'block';
+}
+
+// 渲染批量上传批量解析表格
+function renderBulkUploadBatchParseTable() {
+    const tbody = document.getElementById('bulkUploadBatchParseTableBody');
+    tbody.innerHTML = '';
+    
+    // 按任务ID分组显示素材
+    selectedTasks.forEach(taskId => {
+        const taskFiles = allBulkFiles.filter(file => file.taskId === taskId);
+        
+        taskFiles.forEach((file, index) => {
+            const row = document.createElement('tr');
+            const materialName = file.name.replace(`${taskId}_`, '');
+            
+            // 获取已有的标签数据
+            const existingTags = getBulkUploadTagData(taskId, index) || [];
+            
+            row.innerHTML = `
+                <td>${tbody.children.length + 1}</td>
+                <td class="material-name">${materialName}</td>
+                <td><input type="text" class="bulk-upload-tag-input" data-task-id="${taskId}" data-file-index="${index}" data-tag-index="1" placeholder="标签1" value="${existingTags[0] || ''}"></td>
+                <td><input type="text" class="bulk-upload-tag-input" data-task-id="${taskId}" data-file-index="${index}" data-tag-index="2" placeholder="标签2" value="${existingTags[1] || ''}"></td>
+                <td><input type="text" class="bulk-upload-tag-input" data-task-id="${taskId}" data-file-index="${index}" data-tag-index="3" placeholder="标签3" value="${existingTags[2] || ''}"></td>
+                <td><input type="text" class="bulk-upload-tag-input" data-task-id="${taskId}" data-file-index="${index}" data-tag-index="4" placeholder="标签4" value="${existingTags[3] || ''}"></td>
+                <td><input type="text" class="bulk-upload-tag-input" data-task-id="${taskId}" data-file-index="${index}" data-tag-index="5" placeholder="标签5" value="${existingTags[4] || ''}"></td>
+                <td><input type="text" class="bulk-upload-tag-input" data-task-id="${taskId}" data-file-index="${index}" data-tag-index="6" placeholder="标签6" value="${existingTags[5] || ''}"></td>
+                <td><input type="text" class="bulk-upload-tag-input" data-task-id="${taskId}" data-file-index="${index}" data-tag-index="7" placeholder="标签7" value="${existingTags[6] || ''}"></td>
+                <td><input type="text" class="bulk-upload-tag-input" data-task-id="${taskId}" data-file-index="${index}" data-tag-index="8" placeholder="标签8" value="${existingTags[7] || ''}"></td>
+                <td><input type="text" class="bulk-upload-tag-input" data-task-id="${taskId}" data-file-index="${index}" data-tag-index="9" placeholder="标签9" value="${existingTags[8] || ''}"></td>
+                <td><input type="text" class="bulk-upload-tag-input" data-task-id="${taskId}" data-file-index="${index}" data-tag-index="10" placeholder="标签10" value="${existingTags[9] || ''}"></td>
+            `;
+            tbody.appendChild(row);
+        });
+    });
+}
+
+// 获取批量上传标签数据
+function getBulkUploadTagData(taskId, fileIndex) {
+    const key = `${taskId}_${fileIndex}`;
+    return bulkUploadTagData[key] || [];
+}
+
+// 设置批量上传标签数据
+function setBulkUploadTagData(taskId, fileIndex, tagIndex, value) {
+    const key = `${taskId}_${fileIndex}`;
+    if (!bulkUploadTagData[key]) {
+        bulkUploadTagData[key] = [];
+    }
+    bulkUploadTagData[key][tagIndex - 1] = value;
+}
+
+// 解析批量上传标签
+function parseBulkUploadBatchTags() {
+    const tagInputs = document.querySelectorAll('.bulk-upload-tag-input');
+    let updatedCount = 0;
+    
+    // 收集所有标签数据
+    tagInputs.forEach(input => {
+        const taskId = input.getAttribute('data-task-id');
+        const fileIndex = parseInt(input.getAttribute('data-file-index'));
+        const tagIndex = parseInt(input.getAttribute('data-tag-index'));
+        const tagValue = input.value.trim();
+        
+        if (taskId && fileIndex !== null && tagIndex !== null) {
+            setBulkUploadTagData(taskId, fileIndex, tagIndex, tagValue);
+            updatedCount++;
+        }
+    });
+    
+    // 更新主表格中的标签显示
+    updateBulkUploadTableTags();
+    
+    // 关闭弹窗
+    closeModal('bulkUploadBatchParseModal');
+    
+    showNotification(`批量标签解析完成！已更新 ${updatedCount} 个标签`, 'success');
+}
+
+// 更新批量上传表格中的标签显示
+function updateBulkUploadTableTags() {
+    // 更新所有标签单元格的内容
+    Object.keys(bulkUploadTagData).forEach(key => {
+        const [taskId, fileIndex] = key.split('_');
+        const tags = bulkUploadTagData[key];
+        
+        // 更新对应的标签单元格
+        tags.forEach((tag, index) => {
+            if (tag) {
+                const cell = document.querySelector(`.tag-cell[data-task-id="${taskId}"][data-file-index="${fileIndex}"][data-tag-index="${index + 1}"]`);
+                if (cell) {
+                    cell.textContent = tag;
+                }
+            }
+        });
+    });
+}
+
+// 确认批量上传
+function confirmBulkUpload() {
+    // 检查是否有上传的素材
+    if (allBulkFiles.length === 0) {
+        showNotification('请先上传素材文件', 'warning');
+        return;
+    }
+    
+    // 统计信息
+    const totalFiles = allBulkFiles.length;
+    const totalTasks = selectedTasks.length;
+    
+    // 直接显示简单的确认对话框
+    if (confirm(`确认上传 ${totalFiles} 个素材文件到 ${totalTasks} 个任务吗？\n\n点击"确定"开始上传，点击"取消"返回编辑。`)) {
+        executeBulkUpload();
+    }
+}
+
+// 复杂的确认对话框已删除，现在使用简单的confirm对话框
+
+// 执行批量上传
+function executeBulkUpload() {
+    // 这里可以添加实际的上传逻辑
+    // 例如：发送数据到服务器、更新数据库等
+    
+    // 显示上传进度通知
+    showNotification('开始上传素材和标签...', 'info');
+    
+    // 模拟上传过程
+    setTimeout(() => {
+        // 上传完成，直接清空数据并关闭页面
+        allBulkFiles = [];
+        bulkMaterialTags = {};
+        bulkUploadTagData = {};
+        
+        // 清空所有任务的分配文件
+        selectedTasks.forEach(taskId => {
+            const uploadData = bulkUploadData[taskId];
+            if (uploadData) {
+                uploadData.assignedFiles = [];
+            }
+        });
+        
+        // 关闭批量上传页面
+        closeModal('bulkUploadModal');
+        
+        // 显示成功通知
+        showNotification('批量上传完成！所有素材和标签已成功提交', 'success');
+    }, 2000);
+}
 
 // 添加标签功能
 function addTag(taskId, fileIndex) {
@@ -1818,6 +1989,7 @@ function clearAllUploads() {
         // 清空全局文件列表
         allBulkFiles = [];
         bulkMaterialTags = {};
+        bulkUploadTagData = {}; // 清空标签数据
         
         // 清空所有任务的分配文件
         selectedTasks.forEach(taskId => {
@@ -1828,97 +2000,15 @@ function clearAllUploads() {
         });
         
         // 重新渲染界面
-        renderBulkUploadedFiles();
-        renderAssignedFiles();
+        renderBulkUploadTable();
+        
+        // 隐藏按钮
+        document.getElementById('bulkParseBtn').style.display = 'none';
+        document.getElementById('confirmUploadBtn').style.display = 'none';
     }
 }
 
-// 确认批量上传
-function confirmBulkUpload() {
-    if (allBulkFiles.length === 0) {
-        alert('请先上传素材');
-        return;
-    }
-    
-    // 检查是否有任务分配了素材
-    let hasAssignedFiles = false;
-    selectedTasks.forEach(taskId => {
-        const uploadData = bulkUploadData[taskId];
-        if (uploadData && uploadData.assignedFiles.length > 0) {
-            hasAssignedFiles = true;
-        }
-    });
-    
-    if (!hasAssignedFiles) {
-        alert('没有素材被分配到任何任务，请检查文件名是否包含任务ID');
-        return;
-    }
-    
-    // 显示进度条
-    document.getElementById('uploadProgress').style.display = 'block';
-    document.getElementById('confirmBulkUploadBtn').disabled = true;
-    
-    // 模拟上传过程 - 使用更可靠的线性进度
-    const progressFill = document.getElementById('progressFill');
-    const progressText = document.getElementById('progressText');
-    const uploadDuration = 3000; // 总上传时间3秒
-    const updateInterval = 50; // 每50ms更新一次
-    const totalSteps = uploadDuration / updateInterval;
-    let currentStep = 0;
-    
-    const uploadInterval = setInterval(() => {
-        currentStep++;
-        const progress = Math.min((currentStep / totalSteps) * 100, 100);
-        
-        progressFill.style.width = progress + '%';
-        progressText.textContent = `上传中... ${Math.round(progress)}%`;
-        
-        if (currentStep >= totalSteps) {
-            clearInterval(uploadInterval);
-            
-            // 确保进度条显示100%
-            progressFill.style.width = '100%';
-            progressText.textContent = '上传中... 100%';
-            
-            // 上传完成，更新任务状态
-            selectedTasks.forEach(taskId => {
-                const uploadData = bulkUploadData[taskId];
-                if (uploadData && uploadData.assignedFiles.length > 0) {
-                    const task = taskData.find(t => t.id === taskId);
-                    if (task) {
-                        task.status = 'uploaded';
-                        task.updateTime = new Date().toLocaleString('zh-CN');
-                        task.uploadedMaterials = uploadData.assignedFiles.map((file, index) => {
-                            const tags = bulkMaterialTags[file.name];
-                            const taskInfo = task;
-                            const designer = tags.designer || taskInfo.designer || '未知设计师';
-                            const category = tags.category || taskInfo.productCategory;
-                            const channel = tags.channel || taskInfo.channel;
-                            const productId = tags.productId || taskInfo.productId.split('\n')[0].split('/')[0];
-                            const materialName = `VIP${taskId}+${channel}+${taskInfo.generationType}+${designer}+${category}+${productId}+${designer}-${9000 + index}`;
-                            return materialName;
-                        });
-                    }
-                }
-            });
-            
-            // 重新渲染表格
-            renderTable();
-            
-            setTimeout(() => {
-                // 处理上传完成后的逻辑
-                handleBulkUploadComplete();
-                
-                alert('批量上传完成！');
-                closeModal('bulkUploadModal');
-                document.getElementById('uploadProgress').style.display = 'none';
-                document.getElementById('confirmBulkUploadBtn').disabled = false;
-                progressFill.style.width = '0%';
-                progressText.textContent = '上传中...';
-            }, 1000);
-        }
-    }, updateInterval);
-}
+// 重复的函数定义已删除
 
 // 处理批量上传完成后的逻辑
 function handleBulkUploadComplete() {

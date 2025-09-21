@@ -292,7 +292,12 @@
                 <div class="bulk-upload-summary">
                     <div class="summary-info">
                         <span class="summary-text">已选择 <strong id="selectedTaskCount">0</strong> 个任务进行批量上传</span>
-                        <button class="btn btn-sm btn-secondary" onclick="clearAllUploads()">清空所有上传</button>
+                        <div class="bulk-upload-actions">
+                            <button class="btn btn-sm btn-success" onclick="confirmBulkUpload()" id="confirmUploadBtn" style="display: none;">
+                                <i class="fas fa-check"></i> 确认上传
+                            </button>
+                            <button class="btn btn-sm btn-secondary" onclick="clearAllUploads()">清空所有上传</button>
+                        </div>
                     </div>
                 </div>
                 <div class="bulk-upload-container">
@@ -318,6 +323,13 @@
                                    multiple 
                                    accept="image/*,video/*"
                                    onchange="handleBulkFileSelect(event)">
+                        </div>
+                        
+                        <!-- 批量解析按钮 -->
+                        <div class="bulk-parse-section" style="margin-top: 15px; text-align: center;">
+                            <button class="btn btn-success" onclick="openBulkUploadBatchParseModal()" id="bulkParseBtn" style="display: none;">
+                                <i class="fas fa-magic"></i> 批量解析标签
+                            </button>
                         </div>
                     </div>
                     
@@ -546,40 +558,46 @@
     </div>
 
     <!-- 批量上传批量解析弹窗 -->
-    <div id="bulkBatchParseModal" class="modal">
+    <div id="bulkUploadBatchParseModal" class="modal">
         <div class="modal-content batch-parse-modal-content">
             <div class="modal-header">
                 <h3>批量标签解析</h3>
-                <span class="close" onclick="closeModal('bulkBatchParseModal')">&times;</span>
+                <span class="close" onclick="closeModal('bulkUploadBatchParseModal')">&times;</span>
             </div>
             <div class="modal-body">
                 <div class="batch-parse-instructions">
                     <p>请将素材对应的标签复制到表格中，每列一个标签。支持从Excel等表格软件直接复制粘贴。</p>
+                    <p class="text-muted">提示：可以直接从Excel复制多行数据，系统会自动解析并填充到对应的标签列中。</p>
                 </div>
                 <div class="batch-parse-table-container">
-                    <table id="bulkBatchParseTable" class="batch-parse-table">
+                    <table id="bulkUploadBatchParseTable" class="batch-parse-table">
                         <thead>
                             <tr>
                                 <th width="60">序号</th>
                                 <th width="200">素材名称</th>
-                                <th>品类</th>
-                                <th>渠道</th>
-                                <th>设计师</th>
-                                <th>商品ID</th>
-                                <th>文本标签</th>
+                                <th width="120">标签1</th>
+                                <th width="120">标签2</th>
+                                <th width="120">标签3</th>
+                                <th width="120">标签4</th>
+                                <th width="120">标签5</th>
+                                <th width="120">标签6</th>
+                                <th width="120">标签7</th>
+                                <th width="120">标签8</th>
+                                <th width="120">标签9</th>
+                                <th width="120">标签10</th>
                             </tr>
                         </thead>
-                        <tbody id="bulkBatchParseTableBody">
+                        <tbody id="bulkUploadBatchParseTableBody">
                             <!-- 动态生成 -->
                         </tbody>
                     </table>
                 </div>
             </div>
             <div class="modal-footer">
-                <button class="btn btn-primary" onclick="parseBulkBatchTags()">
+                <button class="btn btn-primary" onclick="parseBulkUploadBatchTags()">
                     <i class="fas fa-magic"></i> 解析标签
                 </button>
-                <button class="btn btn-secondary" onclick="closeModal('bulkBatchParseModal')">取消</button>
+                <button class="btn btn-secondary" onclick="closeModal('bulkUploadBatchParseModal')">取消</button>
             </div>
         </div>
     </div>
