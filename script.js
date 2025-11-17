@@ -3,6 +3,7 @@ let taskData = [];
 let selectedTasks = [];
 let currentUser = 'OA001'; // 当前登录用户，用于判断操作权限
 let uploadedMaterials = []; // 上传的素材列表
+let syncEnabledTags = {}; // 跟踪哪些标签列的同步功能已启用 {tagType: {checkbox, isMultiple, firstCell}}
 
 // 手机号到姓名的映射
 const phoneToNameMap = {
@@ -671,7 +672,8 @@ function generateSelectInput(tagType, currentValue, fileName, options, isMultipl
                 </div>`;
     } else {
         // 单选标签使用普通下拉框
-        const onChangeHandler = `onchange="updateBulkMaterialTag('${escapedFileName}', '${tagType}', this.value)"`;
+        // 使用this传递select元素本身，这样可以直接比较DOM元素
+        const onChangeHandler = `onchange="updateBulkMaterialTag('${escapedFileName}', '${tagType}', this.value, this)"`;
         
         let selectHTML = `<select class="form-control form-control-sm bulk-tag-input"
                                 data-file-name="${escapedFileName}"
@@ -732,6 +734,21 @@ function updateMultiSelectCheckbox(element) {
     // 更新标签值
     updateBulkMaterialTag(fileName, tagType, selectedValues);
     
+    // 如果该标签列的同步功能已启用，且这是第一行的标签，则同步其他行
+    if (syncEnabledTags[tagType]) {
+        const firstDataRow = document.querySelector(`#bulkUploadTableBodyScrollable .bulk-upload-row`);
+        if (firstDataRow) {
+            const firstCell = firstDataRow.querySelector(`.tag-cell[data-tag-type="${tagType}"]`);
+            const firstDropdown = firstCell ? firstCell.querySelector('.multi-select-dropdown') : null;
+            // 如果当前下拉框是第一行的下拉框，则同步
+            if (firstDropdown === dropdown) {
+                setTimeout(() => {
+                    syncTagColumn(tagType, true);
+                }, 50);
+            }
+        }
+    }
+    
     // 重新对齐行高
     alignTableRows();
 }
@@ -788,22 +805,35 @@ function renderBulkUploadTable() {
     const headerRowScrollable = document.createElement('tr');
     headerRowScrollable.className = 'bulk-upload-header-row';
     
-    headerRowScrollable.innerHTML = `
-        <th width="130">图片-商品框形状</th>
-        <th width="130">图片-商品展示形态</th>
-        <th width="130">图片-价格标签样式</th>
-        <th width="130">图片-素材来源</th>
-        <th width="130">任务标签（多选）</th>
-        <th width="130">图片-外推要素（单选）</th>
-        <th width="130">图片-内容策略（单选）</th>
-        <th width="130">图片-信息主次（单选）</th>
-        <th width="130">图片-图集特征（单选）</th>
-        <th width="130">营销元素（多选）</th>
-        <th width="130">价值主张（多选）</th>
-        <th width="130">人群标签（多选）</th>
-        <th width="130">图片-设计师（支持修改）</th>
-        <th width="130">图片-需求人</th>
-    `;
+    // 定义标签列配置（标签类型，标签名称，是否多选）
+    const tagColumns = [
+        { type: 'productFrameShape', label: '图片-商品框形状', isMultiple: false },
+        { type: 'productDisplayForm', label: '图片-商品展示形态', isMultiple: false },
+        { type: 'priceTagStyle', label: '图片-价格标签样式', isMultiple: false },
+        { type: 'materialSource', label: '图片-素材来源', isMultiple: false },
+        { type: 'taskTags', label: '任务标签（多选）', isMultiple: true },
+        { type: 'externalElements', label: '图片-外推要素（单选）', isMultiple: false },
+        { type: 'contentStrategy', label: '图片-内容策略（单选）', isMultiple: false },
+        { type: 'infoPriority', label: '图片-信息主次（单选）', isMultiple: false },
+        { type: 'albumFeatures', label: '图片-图集特征（单选）', isMultiple: false },
+        { type: 'marketingElements', label: '营销元素（多选）', isMultiple: true },
+        { type: 'valueProposition', label: '价值主张（多选）', isMultiple: true },
+        { type: 'audienceTags', label: '人群标签（多选）', isMultiple: true },
+        { type: 'designer', label: '图片-设计师（支持修改）', isMultiple: false },
+        { type: 'requester', label: '图片-需求人', isMultiple: false }
+    ];
+    
+    headerRowScrollable.innerHTML = tagColumns.map(col => `
+        <th width="130" class="tag-header-cell" data-tag-type="${col.type}">
+            <div class="tag-header-content">
+                <input type="checkbox" class="tag-header-checkbox" 
+                       data-tag-type="${col.type}" 
+                       onchange="handleTagHeaderCheckbox(this, '${col.type}', ${col.isMultiple})"
+                       title="勾选后，该列所有标签将跟随第一行的值">
+                <span class="tag-header-label">${col.label}</span>
+            </div>
+        </th>
+    `).join('');
     
     tbodyScrollable.appendChild(headerRowScrollable);
     
@@ -812,8 +842,13 @@ function renderBulkUploadTable() {
         const uploadData = bulkUploadData[taskId];
         const task = uploadData.task;
         
-        // 获取该任务的素材列表
-        const taskFiles = allBulkFiles.filter(file => file.taskId === taskId);
+        // 获取该任务的素材列表（确保类型一致）
+        const taskFiles = allBulkFiles.filter(file => {
+            // 确保比较时类型一致（都转为字符串）
+            const fileTaskId = String(file.taskId || '');
+            const currentTaskId = String(taskId || '');
+            return fileTaskId === currentTaskId;
+        });
         
         // 生成该任务的mid列表
         const taskMids = generateMidList(task);
@@ -863,8 +898,47 @@ function renderBulkUploadTable() {
                 rowScrollable.dataset.taskId = taskId;
                 rowScrollable.dataset.fileIndex = index;
                 
-                // 提取素材名称（去掉任务ID前缀）
-                const materialName = file.name.replace(`${taskId}_`, '');
+                // 提取素材名称（优先使用存储的名称，否则从文件名中提取）
+                let materialName = '';
+                if (bulkMaterialTags[file.name] && bulkMaterialTags[file.name].name) {
+                    // 如果存储的素材名不是完整文件名，使用存储的名称
+                    const storedName = bulkMaterialTags[file.name].name;
+                    // 如果存储的名称不是完整文件名（即已经去掉了任务ID前缀），直接使用
+                    if (storedName !== file.name) {
+                        materialName = storedName;
+                    } else {
+                        // 如果存储的是完整文件名，尝试去掉任务ID前缀（支持多种分隔符）
+                        materialName = storedName;
+                        // 支持的分隔符：_、-、.、空格、+
+                        const separators = ['_', '-', '.', ' ', '+'];
+                        for (const sep of separators) {
+                            const prefix = `${taskId}${sep}`;
+                            if (materialName.startsWith(prefix)) {
+                                materialName = materialName.substring(prefix.length);
+                                break;
+                            }
+                        }
+                    }
+                }
+                
+                // 如果还是没有素材名，从文件名中提取（去掉任务ID前缀，支持多种分隔符）
+                if (!materialName || materialName === file.name) {
+                    materialName = file.name;
+                    // 支持的分隔符：_、-、.、空格、+
+                    const separators = ['_', '-', '.', ' ', '+'];
+                    for (const sep of separators) {
+                        const prefix = `${taskId}${sep}`;
+                        if (materialName.startsWith(prefix)) {
+                            materialName = materialName.substring(prefix.length);
+                            break;
+                        }
+                    }
+                }
+                
+                // 如果仍然为空，使用完整文件名
+                if (!materialName || materialName.trim() === '') {
+                    materialName = file.name;
+                }
                 
                 // 生成素材缩略图预览URL
                 const thumbnailURL = URL.createObjectURL(file);
@@ -890,20 +964,20 @@ function renderBulkUploadTable() {
                 
                 // 生成标签输入单元格 - 按照Excel结构（14个标签列），全部改为下拉选择
                 const tagInputs = `
-                    <td class="tag-cell">${generateSelectInput('productFrameShape', tags.productFrameShape || '', file.name, [], false)}</td>
-                    <td class="tag-cell">${generateSelectInput('productDisplayForm', tags.productDisplayForm || '', file.name, [], false)}</td>
-                    <td class="tag-cell">${generateSelectInput('priceTagStyle', tags.priceTagStyle || '', file.name, [], false)}</td>
-                    <td class="tag-cell">${generateSelectInput('materialSource', tags.materialSource || '', file.name, [], false)}</td>
-                    <td class="tag-cell">${generateSelectInput('taskTags', tags.taskTags || '', file.name, [], true)}</td>
-                    <td class="tag-cell">${generateSelectInput('externalElements', tags.externalElements || '', file.name, [], false)}</td>
-                    <td class="tag-cell">${generateSelectInput('contentStrategy', tags.contentStrategy || '', file.name, [], false)}</td>
-                    <td class="tag-cell">${generateSelectInput('infoPriority', tags.infoPriority || '', file.name, [], false)}</td>
-                    <td class="tag-cell">${generateSelectInput('albumFeatures', tags.albumFeatures || '', file.name, [], false)}</td>
-                    <td class="tag-cell">${generateSelectInput('marketingElements', tags.marketingElements || '', file.name, [], true)}</td>
-                    <td class="tag-cell">${generateSelectInput('valueProposition', tags.valueProposition || '', file.name, [], true)}</td>
-                    <td class="tag-cell">${generateSelectInput('audienceTags', tags.audienceTags || '', file.name, [], true)}</td>
-                    <td class="tag-cell">${generateSelectInput('designer', tags.designer || '', file.name, [], false)}</td>
-                    <td class="tag-cell">${generateSelectInput('requester', tags.requester || '', file.name, [], false)}</td>
+                    <td class="tag-cell" data-tag-type="productFrameShape">${generateSelectInput('productFrameShape', tags.productFrameShape || '', file.name, [], false)}</td>
+                    <td class="tag-cell" data-tag-type="productDisplayForm">${generateSelectInput('productDisplayForm', tags.productDisplayForm || '', file.name, [], false)}</td>
+                    <td class="tag-cell" data-tag-type="priceTagStyle">${generateSelectInput('priceTagStyle', tags.priceTagStyle || '', file.name, [], false)}</td>
+                    <td class="tag-cell" data-tag-type="materialSource">${generateSelectInput('materialSource', tags.materialSource || '', file.name, [], false)}</td>
+                    <td class="tag-cell" data-tag-type="taskTags">${generateSelectInput('taskTags', tags.taskTags || '', file.name, [], true)}</td>
+                    <td class="tag-cell" data-tag-type="externalElements">${generateSelectInput('externalElements', tags.externalElements || '', file.name, [], false)}</td>
+                    <td class="tag-cell" data-tag-type="contentStrategy">${generateSelectInput('contentStrategy', tags.contentStrategy || '', file.name, [], false)}</td>
+                    <td class="tag-cell" data-tag-type="infoPriority">${generateSelectInput('infoPriority', tags.infoPriority || '', file.name, [], false)}</td>
+                    <td class="tag-cell" data-tag-type="albumFeatures">${generateSelectInput('albumFeatures', tags.albumFeatures || '', file.name, [], false)}</td>
+                    <td class="tag-cell" data-tag-type="marketingElements">${generateSelectInput('marketingElements', tags.marketingElements || '', file.name, [], true)}</td>
+                    <td class="tag-cell" data-tag-type="valueProposition">${generateSelectInput('valueProposition', tags.valueProposition || '', file.name, [], true)}</td>
+                    <td class="tag-cell" data-tag-type="audienceTags">${generateSelectInput('audienceTags', tags.audienceTags || '', file.name, [], true)}</td>
+                    <td class="tag-cell" data-tag-type="designer">${generateSelectInput('designer', tags.designer || '', file.name, [], false)}</td>
+                    <td class="tag-cell" data-tag-type="requester">${generateSelectInput('requester', tags.requester || '', file.name, [], false)}</td>
                     `;
                 
                 // 计算mid列的行跨度（用于单品单图和多品单图）
@@ -1000,20 +1074,20 @@ function renderBulkUploadTable() {
             
             // 生成空标签单元格 - 按照Excel结构（14个标签列），全部改为下拉选择
             const emptyTagInputs = `
-                <td class="tag-cell">${generateSelectInput('productFrameShape', '', '', [], false)}</td>
-                <td class="tag-cell">${generateSelectInput('productDisplayForm', '', '', [], false)}</td>
-                <td class="tag-cell">${generateSelectInput('priceTagStyle', '', '', [], false)}</td>
-                <td class="tag-cell">${generateSelectInput('materialSource', task.materialSource || '', '', [], false)}</td>
-                <td class="tag-cell">${generateSelectInput('taskTags', '', '', [], true)}</td>
-                <td class="tag-cell">${generateSelectInput('externalElements', '', '', [], false)}</td>
-                <td class="tag-cell">${generateSelectInput('contentStrategy', '', '', [], false)}</td>
-                <td class="tag-cell">${generateSelectInput('infoPriority', '', '', [], false)}</td>
-                <td class="tag-cell">${generateSelectInput('albumFeatures', '', '', [], false)}</td>
-                <td class="tag-cell">${generateSelectInput('marketingElements', '', '', [], true)}</td>
-                <td class="tag-cell">${generateSelectInput('valueProposition', '', '', [], true)}</td>
-                <td class="tag-cell">${generateSelectInput('audienceTags', '', '', [], true)}</td>
-                <td class="tag-cell">${generateSelectInput('designer', task.designer || '', '', [], false)}</td>
-                <td class="tag-cell">${generateSelectInput('requester', task.submitter || '', '', [], false)}</td>
+                <td class="tag-cell" data-tag-type="productFrameShape">${generateSelectInput('productFrameShape', '', '', [], false)}</td>
+                <td class="tag-cell" data-tag-type="productDisplayForm">${generateSelectInput('productDisplayForm', '', '', [], false)}</td>
+                <td class="tag-cell" data-tag-type="priceTagStyle">${generateSelectInput('priceTagStyle', '', '', [], false)}</td>
+                <td class="tag-cell" data-tag-type="materialSource">${generateSelectInput('materialSource', task.materialSource || '', '', [], false)}</td>
+                <td class="tag-cell" data-tag-type="taskTags">${generateSelectInput('taskTags', '', '', [], true)}</td>
+                <td class="tag-cell" data-tag-type="externalElements">${generateSelectInput('externalElements', '', '', [], false)}</td>
+                <td class="tag-cell" data-tag-type="contentStrategy">${generateSelectInput('contentStrategy', '', '', [], false)}</td>
+                <td class="tag-cell" data-tag-type="infoPriority">${generateSelectInput('infoPriority', '', '', [], false)}</td>
+                <td class="tag-cell" data-tag-type="albumFeatures">${generateSelectInput('albumFeatures', '', '', [], false)}</td>
+                <td class="tag-cell" data-tag-type="marketingElements">${generateSelectInput('marketingElements', '', '', [], true)}</td>
+                <td class="tag-cell" data-tag-type="valueProposition">${generateSelectInput('valueProposition', '', '', [], true)}</td>
+                <td class="tag-cell" data-tag-type="audienceTags">${generateSelectInput('audienceTags', '', '', [], true)}</td>
+                <td class="tag-cell" data-tag-type="designer">${generateSelectInput('designer', task.designer || '', '', [], false)}</td>
+                <td class="tag-cell" data-tag-type="requester">${generateSelectInput('requester', task.submitter || '', '', [], false)}</td>
             `;
             
             rowFixed.innerHTML = `
@@ -1056,6 +1130,207 @@ function renderBulkUploadTable() {
     
     // 确保固定列和可滚动列的行高对齐
     alignTableRows();
+}
+
+// 同步标签列的所有行（基于第一行的值）
+function syncTagColumn(tagType, isMultiple) {
+    console.log(`开始同步标签列: ${tagType}, isMultiple: ${isMultiple}`);
+    
+    // 设置同步标记，避免在同步过程中触发其他同步
+    if (syncEnabledTags[tagType]) {
+        syncEnabledTags[tagType]._syncing = true;
+    }
+    
+    // 获取所有该标签类型的单元格
+    const tagCells = document.querySelectorAll(`.tag-cell[data-tag-type="${tagType}"]`);
+    console.log(`找到 ${tagCells.length} 个标签单元格`);
+    
+    if (tagCells.length === 0) {
+        console.log('未找到标签单元格，退出同步');
+        if (syncEnabledTags[tagType]) {
+            delete syncEnabledTags[tagType]._syncing;
+        }
+        return;
+    }
+    
+    // 获取第一行的单元格
+    const firstDataRow = document.querySelector(`#bulkUploadTableBodyScrollable .bulk-upload-row`);
+    if (!firstDataRow) {
+        console.log('未找到第一行数据，退出同步');
+        if (syncEnabledTags[tagType]) {
+            delete syncEnabledTags[tagType]._syncing;
+        }
+        return;
+    }
+    
+    const firstCell = firstDataRow.querySelector(`.tag-cell[data-tag-type="${tagType}"]`);
+    if (!firstCell) {
+        console.log(`未找到第一行的标签单元格: ${tagType}`);
+        if (syncEnabledTags[tagType]) {
+            delete syncEnabledTags[tagType]._syncing;
+        }
+        return;
+    }
+    
+    // 获取第一行的值
+    let firstValue = '';
+    
+    if (isMultiple) {
+        // 多选标签：从多选下拉框获取选中的值
+        const firstDropdown = firstCell.querySelector('.multi-select-dropdown');
+        if (firstDropdown) {
+            const checkboxes = firstDropdown.querySelectorAll('input[type="checkbox"]:checked');
+            firstValue = Array.from(checkboxes).map(cb => cb.value).join(', ');
+        }
+    } else {
+        // 单选标签：从select获取值
+        const firstSelect = firstCell.querySelector('select');
+        if (firstSelect) {
+            firstValue = firstSelect.value || '';
+        }
+    }
+    
+    console.log(`第一行的值: "${firstValue}"`);
+    
+    // 填充所有行的值（跳过第一行）
+    let updatedCount = 0;
+    tagCells.forEach((cell, index) => {
+        // 跳过第一行（已经是我们参考的值）
+        if (cell === firstCell) {
+            console.log(`跳过第一行 (索引 ${index})`);
+            return;
+        }
+        
+        if (isMultiple) {
+            // 多选标签：设置多选下拉框的值
+            const dropdown = cell.querySelector('.multi-select-dropdown');
+            if (dropdown) {
+                const fileName = dropdown.dataset.fileName || dropdown.getAttribute('data-file-name');
+                
+                // 更新UI显示（无条件更新，即使没有fileName也要同步显示）
+                const selectedValues = firstValue ? firstValue.split(',').map(v => v.trim()).filter(v => v) : [];
+                const checkboxes = dropdown.querySelectorAll('input[type="checkbox"]');
+                checkboxes.forEach(cb => {
+                    cb.checked = selectedValues.includes(cb.value);
+                });
+                
+                // 更新显示文本
+                const displayText = firstValue || '请选择';
+                const displaySpan = dropdown.querySelector('.multi-select-text');
+                if (displaySpan) {
+                    displaySpan.textContent = displayText;
+                }
+                updatedCount++;
+                
+                // 如果有fileName，同时更新数据存储
+                if (fileName) {
+                    // 更新标签数据（不触发同步，因为已设置_syncing标记）
+                    if (bulkMaterialTags[fileName]) {
+                        bulkMaterialTags[fileName][tagType] = firstValue;
+                    }
+                    console.log(`更新多选标签: ${fileName}, 值: ${firstValue}`);
+                } else {
+                    // 即使没有fileName，也更新了UI显示
+                    console.log(`更新多选标签 (无fileName): 值: ${firstValue}`);
+                }
+            }
+        } else {
+            // 单选标签：设置select的值
+            const select = cell.querySelector('select');
+            if (select) {
+                const fileName = select.dataset.fileName || select.getAttribute('data-file-name');
+                
+                // 更新UI显示（无条件更新，即使没有fileName也要同步显示）
+                select.value = firstValue;
+                updatedCount++;
+                
+                // 如果有fileName，同时更新数据存储
+                if (fileName) {
+                    // 更新标签数据（不触发同步，因为已设置_syncing标记）
+                    if (bulkMaterialTags[fileName]) {
+                        bulkMaterialTags[fileName][tagType] = firstValue;
+                    }
+                    console.log(`更新单选标签 (行 ${index}): ${fileName}, 值: ${firstValue}`);
+                } else {
+                    // 即使没有fileName，也更新了UI显示
+                    console.log(`更新单选标签 (行 ${index}, 无fileName): 值: ${firstValue}`);
+                }
+            } else {
+                console.log(`行 ${index} 的单元格中没有找到select元素`);
+            }
+        }
+    });
+    
+    console.log(`同步完成，共更新 ${updatedCount} 行`);
+    
+    // 清除同步标记
+    if (syncEnabledTags[tagType]) {
+        delete syncEnabledTags[tagType]._syncing;
+    }
+    
+    // 重新对齐行高
+    alignTableRows();
+}
+
+// 处理表头复选框勾选事件
+function handleTagHeaderCheckbox(checkbox, tagType, isMultiple) {
+    // 获取第一行的单元格
+    const firstDataRow = document.querySelector(`#bulkUploadTableBodyScrollable .bulk-upload-row`);
+    if (!firstDataRow) {
+        showNotification('未找到数据行', 'warning');
+        checkbox.checked = false;
+        return;
+    }
+    
+    const firstCell = firstDataRow.querySelector(`.tag-cell[data-tag-type="${tagType}"]`);
+    if (!firstCell) {
+        showNotification('未找到第一行的标签单元格', 'warning');
+        checkbox.checked = false;
+        return;
+    }
+    
+    if (checkbox.checked) {
+        // 勾选：启用同步功能
+        // 获取第一行的值
+        let firstValue = '';
+        
+        if (isMultiple) {
+            const firstDropdown = firstCell.querySelector('.multi-select-dropdown');
+            if (firstDropdown) {
+                const checkboxes = firstDropdown.querySelectorAll('input[type="checkbox"]:checked');
+                firstValue = Array.from(checkboxes).map(cb => cb.value).join(', ');
+            }
+        } else {
+            const firstSelect = firstCell.querySelector('select');
+            if (firstSelect) {
+                firstValue = firstSelect.value || '';
+            }
+        }
+        
+        if (!firstValue) {
+            showNotification('第一行的标签值为空，无法启用同步', 'warning');
+            checkbox.checked = false;
+            return;
+        }
+        
+        // 保存同步状态
+        syncEnabledTags[tagType] = {
+            checkbox: checkbox,
+            isMultiple: isMultiple,
+            firstCell: firstCell
+        };
+        
+        // 先执行一次填充
+        syncTagColumn(tagType, isMultiple);
+        showNotification(`已启用同步：该列所有行的标签将跟随第一行变化`, 'success');
+        
+        // 注意：动态同步通过updateBulkMaterialTag和updateMultiSelectCheckbox函数处理
+        // 单选标签：通过updateBulkMaterialTag中的逻辑自动同步
+        // 多选标签：通过updateMultiSelectCheckbox中的逻辑自动同步
+    } else {
+        // 取消勾选：禁用同步功能
+        delete syncEnabledTags[tagType];
+    }
 }
 
 // 对齐固定列和可滚动列的行高
@@ -1241,7 +1516,43 @@ function renderBulkUploadBatchParseTable() {
         
         taskFiles.forEach((file, index) => {
             const row = document.createElement('tr');
-            const materialName = file.name.replace(`${taskId}_`, '');
+            
+            // 提取素材名称（优先使用存储的名称，否则从文件名中提取）
+            let materialName = '';
+            if (bulkMaterialTags[file.name] && bulkMaterialTags[file.name].name) {
+                const storedName = bulkMaterialTags[file.name].name;
+                if (storedName !== file.name) {
+                    materialName = storedName;
+                } else {
+                    // 如果存储的是完整文件名，尝试去掉任务ID前缀（支持多种分隔符）
+                    materialName = storedName;
+                    const separators = ['_', '-', '.', ' ', '+'];
+                    for (const sep of separators) {
+                        const prefix = `${taskId}${sep}`;
+                        if (materialName.startsWith(prefix)) {
+                            materialName = materialName.substring(prefix.length);
+                            break;
+                        }
+                    }
+                }
+            }
+            
+            if (!materialName || materialName === file.name) {
+                // 从文件名中提取（去掉任务ID前缀，支持多种分隔符）
+                materialName = file.name;
+                const separators = ['_', '-', '.', ' ', '+'];
+                for (const sep of separators) {
+                    const prefix = `${taskId}${sep}`;
+                    if (materialName.startsWith(prefix)) {
+                        materialName = materialName.substring(prefix.length);
+                        break;
+                    }
+                }
+            }
+            
+            if (!materialName || materialName.trim() === '') {
+                materialName = file.name;
+            }
             
             // 获取已有的标签数据
             const existingTags = getBulkUploadTagData(taskId, index) || [];
@@ -1435,6 +1746,22 @@ function handleBulkFileSelect(event) {
             return;
         }
         
+        // 如果任务ID不在selectedTasks中，自动添加
+        if (!selectedTasks.includes(taskId)) {
+            selectedTasks.push(taskId);
+            console.log('Auto-added task ID to selectedTasks:', taskId);
+            
+            // 初始化bulkUploadData
+            const task = taskData.find(t => t.id === taskId);
+            if (task && !bulkUploadData[taskId]) {
+                bulkUploadData[taskId] = {
+                    task: task,
+                    assignedFiles: []
+                };
+                console.log('Initialized bulkUploadData for task:', taskId);
+            }
+        }
+        
         // 添加到全局文件列表
         allBulkFiles.push(file);
         console.log('File added to allBulkFiles:', file.name);
@@ -1463,6 +1790,13 @@ function handleBulkFileSelect(event) {
     });
     
     console.log('Total files in allBulkFiles:', allBulkFiles.length);
+    console.log('Selected tasks:', selectedTasks);
+    
+    // 更新选中任务数量显示
+    const selectedTaskCountEl = document.getElementById('selectedTaskCount');
+    if (selectedTaskCountEl) {
+        selectedTaskCountEl.textContent = selectedTasks.length;
+    }
     
     // 重新渲染表格以显示新上传的素材
     renderBulkUploadTable();
@@ -1476,9 +1810,28 @@ function handleBulkFileSelect(event) {
 
 // 从文件名中提取任务ID
 function extractTaskIdFromFileName(fileName) {
-    // 文件名格式：任务ID_素材名称（如：7CrNkAAF_202509031.jpg）
-    const match = fileName.match(/^([^_]+)_/);
-    return match ? match[1] : null;
+    // 文件名格式支持多种分隔符：
+    // 1. 任务ID_素材名称（如：7CrNkAAF_202509031.jpg）
+    // 2. 任务ID+素材名称（如：7CrNkAAF+6920001524674067000+1）
+    // 3. 任务ID-素材名称
+    // 4. 任务ID.素材名称
+    // 5. 任务ID 素材名称（空格）
+    const patterns = [
+        /^([^_]+)_/,      // 下划线分隔
+        /^([^+]+)\+/,     // 加号分隔
+        /^([^-]+)-/,      // 减号分隔
+        /^([^\.]+)\./,    // 点号分隔
+        /^([^\s]+)\s/     // 空格分隔
+    ];
+    
+    for (const pattern of patterns) {
+        const match = fileName.match(pattern);
+        if (match) {
+            return match[1];
+        }
+    }
+    
+    return null;
 }
 
 // 处理批量拖拽悬停
@@ -1525,6 +1878,22 @@ function handleBulkDrop(event) {
         const taskId = extractTaskIdFromFileName(file.name);
         if (taskId) {
             file.taskId = taskId;
+            
+            // 如果任务ID不在selectedTasks中，自动添加
+            if (!selectedTasks.includes(taskId)) {
+                selectedTasks.push(taskId);
+                console.log('Auto-added task ID to selectedTasks (drop):', taskId);
+                
+                // 初始化bulkUploadData
+                const task = taskData.find(t => t.id === taskId);
+                if (task && !bulkUploadData[taskId]) {
+                    bulkUploadData[taskId] = {
+                        task: task,
+                        assignedFiles: []
+                    };
+                    console.log('Initialized bulkUploadData for task (drop):', taskId);
+                }
+            }
         }
         
         // 添加到全局文件列表
@@ -1555,11 +1924,19 @@ function handleBulkDrop(event) {
     });
     
     console.log('Total files in allBulkFiles after drop:', allBulkFiles.length);
+    console.log('Selected tasks after drop:', selectedTasks);
+    
+    // 更新选中任务数量显示
+    const selectedTaskCountEl = document.getElementById('selectedTaskCount');
+    if (selectedTaskCountEl) {
+        selectedTaskCountEl.textContent = selectedTasks.length;
+    }
     
     // 自动分配文件到任务
     autoAssignFilesToTasks();
     
     // 渲染界面
+    renderBulkUploadTable(); // 渲染批量上传表格
     renderBulkUploadedFiles();
     renderAssignedFiles();
     
@@ -1584,6 +1961,22 @@ function addBulkFiles(files) {
         const taskId = extractTaskIdFromFileName(file.name);
         if (taskId) {
             file.taskId = taskId;
+            
+            // 如果任务ID不在selectedTasks中，自动添加
+            if (!selectedTasks.includes(taskId)) {
+                selectedTasks.push(taskId);
+                console.log('Auto-added task ID to selectedTasks (addBulkFiles):', taskId);
+                
+                // 初始化bulkUploadData
+                const task = taskData.find(t => t.id === taskId);
+                if (task && !bulkUploadData[taskId]) {
+                    bulkUploadData[taskId] = {
+                        task: task,
+                        assignedFiles: []
+                    };
+                    console.log('Initialized bulkUploadData for task (addBulkFiles):', taskId);
+                }
+            }
         }
         
         allBulkFiles.push(file);
@@ -2462,9 +2855,65 @@ function updateBulkMaterialName(fileName, newName) {
 }
 
 // 更新批量素材标签
-function updateBulkMaterialTag(fileName, tagType, value) {
+function updateBulkMaterialTag(fileName, tagType, value, selectElement) {
     if (bulkMaterialTags[fileName]) {
         bulkMaterialTags[fileName][tagType] = value;
+    }
+    
+    // 如果该标签列的同步功能已启用，且这是第一行的标签，则同步其他行
+    if (syncEnabledTags[tagType] && !syncEnabledTags[tagType]._syncing) {
+        // 跳过多选标签，因为多选标签由updateMultiSelectCheckbox处理
+        if (syncEnabledTags[tagType].isMultiple) {
+            // 多选标签的同步由updateMultiSelectCheckbox处理，这里不做处理
+        } else {
+            // 单选标签：检查是否是第一行的标签
+            // 如果有传入selectElement，直接检查它是否是第一行的select（这是最可靠的方法）
+            if (selectElement) {
+                const firstDataRow = document.querySelector(`#bulkUploadTableBodyScrollable .bulk-upload-row`);
+                if (firstDataRow) {
+                    const firstCell = firstDataRow.querySelector(`.tag-cell[data-tag-type="${tagType}"]`);
+                    if (firstCell) {
+                        const firstSelect = firstCell.querySelector('select');
+                        // 直接比较DOM元素引用，这是最可靠的方法
+                        if (firstSelect === selectElement) {
+                            // 如果当前更新的标签是第一行的标签，则同步其他行
+                            console.log(`同步标签列: ${tagType}, 值: ${value}`);
+                            setTimeout(() => {
+                                syncTagColumn(tagType, false);
+                            }, 50);
+                        }
+                    }
+                }
+            } else {
+                // 备用方法：通过比较fileName判断（如果selectElement未传入）
+                const firstDataRow = document.querySelector(`#bulkUploadTableBodyScrollable .bulk-upload-row`);
+                if (firstDataRow) {
+                    const firstCell = firstDataRow.querySelector(`.tag-cell[data-tag-type="${tagType}"]`);
+                    if (firstCell) {
+                        const firstSelect = firstCell.querySelector('select');
+                        if (firstSelect) {
+                            // 获取第一行的fileName
+                            let firstFileName = firstSelect.dataset.fileName || firstSelect.getAttribute('data-file-name');
+                            // 比较时处理转义字符
+                            const normalize = (str) => str ? str.replace(/\\'/g, "'").replace(/'/g, "'") : '';
+                            if (normalize(firstFileName) === normalize(fileName)) {
+                                console.log(`同步标签列(备用方法): ${tagType}, 值: ${value}`);
+                                setTimeout(() => {
+                                    syncTagColumn(tagType, false);
+                                }, 50);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    } else {
+        // 调试信息
+        if (!syncEnabledTags[tagType]) {
+            console.log(`标签 ${tagType} 的同步功能未启用`);
+        } else if (syncEnabledTags[tagType]._syncing) {
+            console.log(`标签 ${tagType} 正在同步中，跳过`);
+        }
     }
     
     // 标签更新后重新对齐行高
