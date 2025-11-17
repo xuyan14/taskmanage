@@ -244,9 +244,9 @@ th, td {
 
 /* 动态列宽通过CSS变量控制，不再需要固定的nth-child选择器 */
 
-/* 固定操作列 */
-th:last-child,
-td:last-child {
+/* 固定操作列 - 只对主表格应用，不应用于可滚动列表格 */
+table:not(.scrollable-columns-table) th:last-child,
+table:not(.scrollable-columns-table) td:last-child {
     position: sticky;
     right: 0;
     background-color: white;
@@ -254,6 +254,13 @@ td:last-child {
     box-shadow: -2px 0 5px rgba(0, 0, 0, 0.1);
     min-width: 180px;
     width: 180px;
+}
+
+/* 确保可滚动列的最后一列（图片-需求人）不会被固定，可以正常滚动 */
+.scrollable-columns-table th:last-child,
+.scrollable-columns-table td:last-child {
+    position: static !important;
+    box-shadow: none !important;
 }
 
 th:last-child {
@@ -1842,22 +1849,27 @@ input[readonly]:focus {
     max-height: calc(90vh - 300px);
     overflow: hidden;
     position: relative;
+    align-items: flex-start; /* 确保两个表格从顶部对齐 */
 }
 
 /* 固定列容器 */
 .fixed-columns-container {
     flex-shrink: 0;
-    width: 670px; /* 120 + 300 + 250 = 670px */
+    width: 850px; /* 120(任务ID) + 300(任务要求) + 180(需求mid) + 250(素材名) = 850px */
     border-right: 2px solid #e9ecef;
     background: white;
     z-index: 10;
+    overflow-y: auto;
+    overflow-x: hidden;
+    max-height: calc(90vh - 300px);
 }
 
 /* 可滚动列容器 */
 .scrollable-columns-container {
     flex: 1;
     overflow-x: auto;
-    overflow-y: hidden;
+    overflow-y: auto;
+    max-height: calc(90vh - 300px);
     /* 移动端触摸滚动优化 */
     -webkit-overflow-scrolling: touch;
     touch-action: pan-x;
@@ -1872,12 +1884,16 @@ input[readonly]:focus {
 
 /* 固定列表格样式 */
 .fixed-columns-table {
-    width: 670px;
+    width: 850px; /* 120(任务ID) + 300(任务要求) + 180(需求mid) + 250(素材名) = 850px */
+    border-collapse: separate;
+    border-spacing: 0;
 }
 
 /* 可滚动列表格样式 */
 .scrollable-columns-table {
-    min-width: auto; /* 根据实际列数自适应 */
+    min-width: 1820px; /* 14列 × 130px = 1820px */
+    border-collapse: separate;
+    border-spacing: 0;
 }
 
 /* 固定列宽控制 */
@@ -1895,15 +1911,22 @@ input[readonly]:focus {
 
 .fixed-columns-table th:nth-child(3),
 .fixed-columns-table td:nth-child(3) {
+    width: 180px;
+    min-width: 180px;
+}
+
+.fixed-columns-table th:nth-child(4),
+.fixed-columns-table td:nth-child(4) {
     width: 250px;
     min-width: 250px;
 }
 
-/* 可滚动列宽控制 */
+/* 可滚动列宽控制已在上面的.scrollable-columns-table中定义 */
+
 .scrollable-columns-table th,
 .scrollable-columns-table td {
-    width: 100px;
-    min-width: 100px;
+    width: 130px;
+    min-width: 130px;
 }
 
 /* 添加标签列按钮样式 */
@@ -1958,22 +1981,24 @@ input[readonly]:focus {
 }
 
 .bulk-upload-table td {
-    padding: 15px;
+    padding: 8px;
     border-bottom: 1px solid #e9ecef;
     vertical-align: top;
-    height: 60px; /* 统一行高 */
+    height: auto;
+    min-height: 50px;
 }
 
 /* 任务ID单元格样式 */
 .task-id-cell {
     text-align: left;
-    padding: 12px 8px;
+    padding: 8px;
     font-weight: 600;
     color: #2c3e50;
     background-color: #f8f9fa;
     border-right: 1px solid #e9ecef;
-    vertical-align: middle;
-    height: 60px; /* 统一行高 */
+    vertical-align: top;
+    height: auto;
+    min-height: 50px;
 }
 
 .task-id-text {
@@ -1984,12 +2009,13 @@ input[readonly]:focus {
 
 /* 任务要求单元格样式 */
 .task-requirements {
-    padding: 12px 8px;
-    vertical-align: middle;
+    padding: 8px;
+    vertical-align: top;
     border-right: 1px solid #e9ecef;
     word-wrap: break-word;
     overflow-wrap: break-word;
-    height: 60px; /* 统一行高 */
+    height: auto;
+    min-height: 50px;
 }
 
 .requirements-horizontal {
@@ -2014,17 +2040,49 @@ input[readonly]:focus {
 
 /* 素材名称单元格样式 */
 .material-name-cell {
-    padding: 12px 8px;
-    vertical-align: middle;
+    padding: 8px;
+    vertical-align: top;
     word-wrap: break-word;
     overflow-wrap: break-word;
-    height: 60px; /* 统一行高 */
+    height: auto;
+    min-height: 50px;
+}
+
+.material-name-with-thumbnail {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.material-thumbnail {
+    width: 40px;
+    height: 40px;
+    object-fit: cover;
+    border-radius: 4px;
+    border: 1px solid #e9ecef;
+    flex-shrink: 0;
+    background-color: #f8f9fa;
+}
+
+.material-thumbnail-placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #e9ecef;
+    color: #6c757d;
+    font-size: 16px;
+}
+
+.material-thumbnail-placeholder i {
+    font-size: 18px;
 }
 
 .material-name-text {
     font-size: 14px;
     color: #495057;
     font-weight: 500;
+    flex: 1;
+    word-break: break-all;
 }
 
 /* 标签区单元格样式 */
@@ -2071,18 +2129,34 @@ input[readonly]:focus {
     justify-content: center;
 }
 
+/* mid单元格样式 */
+.mid-cell {
+    padding: 8px;
+    border: 1px solid #e9ecef;
+    vertical-align: top;
+    background-color: white;
+    font-size: 12px;
+    line-height: 1.6;
+    white-space: normal;
+    word-break: break-all;
+}
+
+.mid-cell br {
+    margin: 2px 0;
+}
+
 /* 标签单元格样式 - 直接可编辑 */
 .tag-cell {
-    padding: 12px 8px;
+    padding: 8px;
     border: 1px solid #e9ecef;
-    vertical-align: middle;
+    vertical-align: top;
     background-color: white;
     position: relative;
-    height: 60px; /* 统一行高 */
-    text-align: center;
+    height: auto;
+    min-height: 50px;
+    text-align: left;
     font-size: 12px;
     transition: all 0.2s ease;
-    cursor: text;
     outline: none;
 }
 
@@ -2108,8 +2182,145 @@ input[readonly]:focus {
     content: '';
 }
 
+/* 标签单元格中的表单控件样式 */
+.tag-cell .bulk-tag-input {
+    width: 100%;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 6px 8px;
+    font-size: 13px;
+    transition: border-color 0.3s;
+    box-sizing: border-box;
+}
+
+.tag-cell .bulk-tag-input:focus {
+    outline: none;
+    border-color: #3498db;
+    box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.1);
+}
+
+.tag-cell .bulk-tag-input::placeholder {
+    color: #adb5bd;
+    font-size: 12px;
+}
+
+/* 多选下拉框样式 */
+.multi-select-dropdown {
+    position: relative;
+    width: 100%;
+}
+
+.multi-select-display {
+    width: 100%;
+    padding: 6px 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background-color: white;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 13px;
+    min-height: 32px;
+    box-sizing: border-box;
+    transition: border-color 0.3s;
+}
+
+.multi-select-display:hover {
+    border-color: #3498db;
+}
+
+.multi-select-dropdown.active .multi-select-display {
+    border-color: #3498db;
+    box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.1);
+}
+
+.multi-select-text {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: #495057;
+}
+
+.multi-select-text:empty::before {
+    content: '请选择';
+    color: #adb5bd;
+}
+
+.multi-select-arrow {
+    color: #6c757d;
+    font-size: 10px;
+    margin-left: 8px;
+    transition: transform 0.3s;
+}
+
+.multi-select-dropdown.active .multi-select-arrow {
+    transform: rotate(180deg);
+}
+
+.multi-select-menu {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    margin-top: 4px;
+    background-color: white;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    z-index: 1000;
+    max-height: 200px;
+    overflow-y: auto;
+    display: none;
+}
+
+.multi-select-option {
+    display: flex;
+    align-items: center;
+    padding: 8px 12px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    margin: 0;
+}
+
+.multi-select-option:hover {
+    background-color: #f8f9fa;
+}
+
+.multi-select-option input[type="checkbox"] {
+    margin-right: 8px;
+    cursor: pointer;
+}
+
+.multi-select-option span {
+    flex: 1;
+    font-size: 13px;
+    color: #495057;
+}
+
 .bulk-upload-row:nth-child(even) {
     background-color: #f8f9fa;
+}
+
+/* 确保每行都有相同的高度和对齐 */
+.bulk-upload-row {
+    height: auto;
+    min-height: 50px;
+    box-sizing: border-box;
+}
+
+/* 确保固定列和可滚动列的行对齐 */
+.fixed-columns-table .bulk-upload-row,
+.scrollable-columns-table .bulk-upload-row {
+    height: auto;
+    min-height: 50px;
+    box-sizing: border-box;
+}
+
+/* 确保rowspan单元格不影响行高计算 */
+.fixed-columns-table td[rowspan] {
+    vertical-align: top;
 }
 
 /* 合并单元格的视觉分隔 */
@@ -2671,12 +2882,12 @@ input[readonly]:focus {
     /* 移动端表格列宽调整 */
     /* 固定列容器宽度调整 */
     .fixed-columns-container {
-        width: 350px; /* 80 + 150 + 120 = 350px */
+        width: 480px; /* 80(任务ID) + 150(任务要求) + 100(需求mid) + 150(素材名) = 480px */
     }
     
     /* 固定列表格宽度调整 */
     .fixed-columns-table {
-        width: 350px;
+        width: 480px; /* 80(任务ID) + 150(任务要求) + 100(需求mid) + 150(素材名) = 480px */
     }
     
     /* 固定列宽控制 */
@@ -2694,20 +2905,26 @@ input[readonly]:focus {
     
     .fixed-columns-table th:nth-child(3),
     .fixed-columns-table td:nth-child(3) {
-        width: 120px;
-        min-width: 120px;
+        width: 100px;
+        min-width: 100px;
     }
     
-    /* 可滚动列表格最小宽度调整 */
+    .fixed-columns-table th:nth-child(4),
+    .fixed-columns-table td:nth-child(4) {
+        width: 150px;
+        min-width: 150px;
+    }
+    
+    /* 可滚动列表格最小宽度调整 - 14个标签列 */
     .scrollable-columns-table {
-        min-width: auto; /* 根据实际列数自适应 */
+        min-width: 910px; /* 14列 × 65px = 910px (移动端缩小) */
     }
     
     /* 可滚动列宽控制 */
     .scrollable-columns-table th,
     .scrollable-columns-table td {
-        width: 60px;
-        min-width: 60px;
+        width: 65px;
+        min-width: 65px;
     }
     
     /* 移动端添加标签列按钮样式 */
@@ -3639,4 +3856,40 @@ input[readonly]:focus {
         flex-direction: row;
         justify-content: center;
     }
+}
+
+/* 安心购信息样式 */
+.anxin-info-cell {
+    padding: 4px;
+    max-width: 225px;
+    word-wrap: break-word;
+    vertical-align: top;
+}
+
+.anxin-tag {
+    display: inline-block;
+    background-color: #e8f5e8;
+    color: #2d7d2d;
+    padding: 1px 4px;
+    margin: 1px;
+    border-radius: 3px;
+    font-size: 10px;
+    font-weight: 500;
+    border: 1px solid #c8e6c8;
+    white-space: nowrap;
+    line-height: 1.2;
+}
+
+.anxin-tag:not(:last-child) {
+    margin-right: 2px;
+}
+
+.anxin-product-row {
+    margin-bottom: 2px;
+    font-size: 10px;
+    line-height: 1.4;
+}
+
+.anxin-tags {
+    margin: 0;
 }

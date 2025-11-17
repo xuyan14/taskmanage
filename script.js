@@ -43,6 +43,7 @@ class TableColumnManager {
             { key: 'materialSize', label: '素材尺寸', type: 'text', width: 140, visible: true, formatter: 'formatMaterialSize' },
             { key: 'productCategory', label: '品类', type: 'text', width: 100, visible: true },
             { key: 'productId', label: '商品ID/等级', type: 'text', width: 200, visible: true },
+            { key: 'anxinInfo', label: '安心购信息', type: 'text', width: 300, visible: true, formatter: 'formatAnxinInfo', cssClass: 'anxin-info-cell' },
             { key: 'priceInfo', label: '价格信息', type: 'text', width: 500, visible: true, cssClass: 'price-info-cell' },
             { key: 'applicationScenario', label: '应用场景', type: 'text', width: 100, visible: true },
             { key: 'creativeStrategyTag', label: '创意策略标签', type: 'text', width: 150, visible: true },
@@ -138,6 +139,7 @@ const mockData = [
         productId: 'PROD001/国A级',
         productLevel: '一级',
         productCategory: '服装',
+        anxinInfo: generateRandomAnxinInfo(),
         priceInfo: '市价299|唯品199|到手159|直降40|折扣0.8|',
         applicationScenario: '日常',
         creativeStrategyTag: '突出商品',
@@ -166,6 +168,7 @@ const mockData = [
         productId: 'PROD002/国B级\nPROD003/国B级',
         productLevel: '二级',
         productCategory: '美妆',
+        anxinInfo: generateRandomAnxinInfo(),
         priceInfo: '市价199|唯品129|到手99|直降30|折扣0.77|<br>市价299|唯品199|到手159|直降40|折扣0.8|',
         applicationScenario: '促销',
         creativeStrategyTag: '情绪营销',
@@ -194,6 +197,7 @@ const mockData = [
         productId: 'PROD004/国C级',
         productLevel: '三级',
         productCategory: '数码',
+        anxinInfo: generateRandomAnxinInfo(),
         priceInfo: '市价1299|唯品999|到手799|直降200|折扣0.8|',
         applicationScenario: '节日',
         creativeStrategyTag: '突出价格',
@@ -222,6 +226,7 @@ const mockData = [
         productId: 'PROD005/国A级\nPROD006/国A级\nPROD007/国A级',
         productLevel: '一级',
         productCategory: '食品',
+        anxinInfo: generateRandomAnxinInfo(),
         priceInfo: '市价89|唯品59|到手49|直降10|折扣0.83|<br>市价129|唯品89|到手69|直降20|折扣0.78|<br>市价199|唯品139|到手109|直降30|折扣0.78|',
         applicationScenario: '日常',
         creativeStrategyTag: '突出折扣',
@@ -250,6 +255,7 @@ const mockData = [
         productId: 'PROD008/国B级',
         productLevel: '二级',
         productCategory: '家居',
+        anxinInfo: generateRandomAnxinInfo(),
         priceInfo: '市价599|唯品399|到手299|直降100|折扣0.75|',
         applicationScenario: '促销',
         creativeStrategyTag: '多品主题',
@@ -287,6 +293,7 @@ const mockData = [
         productId: 'PROD009/国C级',
         productLevel: '三级',
         productCategory: '配饰',
+        anxinInfo: generateRandomAnxinInfo(),
         priceInfo: '市价199|唯品129|到手99|直降30|折扣0.77|',
         applicationScenario: '日常',
         creativeStrategyTag: '实拍合集-九宫格',
@@ -318,6 +325,7 @@ const mockData = [
         productId: '6920832209174221771/国A级',
         productLevel: '一级',
         productCategory: '服装',
+        anxinInfo: generateRandomAnxinInfo(),
         priceInfo: '市价399|唯品299|到手239|直降60|折扣0.8|',
         applicationScenario: '日常',
         creativeStrategyTag: '突出商品',
@@ -367,6 +375,89 @@ function formatReferenceImages(referenceImages) {
     return referenceImages.map((url, index) => 
         `<a href="#" class="reference-link" onclick="openReferenceModal('${url}', ${index + 1}); return false;">参考${index + 1}</a>`
     ).join(' ');
+}
+
+// 格式化安心购信息显示
+function formatAnxinInfo(anxinInfo, productId) {
+    if (!anxinInfo || anxinInfo.length === 0) {
+        return '-';
+    }
+    
+    // 如果商品ID包含多个ID（用换行符分隔），则分行显示安心购信息
+    if (productId && productId.includes('\n')) {
+        const productIds = productId.split('\n');
+        const anxinTags = anxinInfo.map(info => `<span class="anxin-tag">${info}</span>`).join(' ');
+        
+        // 为每个商品ID显示相同的安心购信息，但不显示商品ID
+        return productIds.map((id, index) => {
+            return `<div class="anxin-product-row">
+                        <div class="anxin-tags">${anxinTags}</div>
+                    </div>`;
+        }).join('');
+    } else {
+        // 单个商品ID，直接显示安心购信息
+        return anxinInfo.map(info => 
+            `<span class="anxin-tag">${info}</span>`
+        ).join(' ');
+    }
+}
+
+// 生成随机安心购信息
+function generateRandomAnxinInfo() {
+    const anxinOptions = [
+        '奶粉无忧', '红屁屁无忧', '过敏无忧', '效期无忧', 
+        '破损无忧', '正规发票', '15天质量退'
+    ];
+    
+    // 随机选择1-5个安心购信息
+    const count = Math.floor(Math.random() * 5) + 1; // 1-5个
+    const shuffled = anxinOptions.sort(() => 0.5 - Math.random());
+    return shuffled.slice(0, count);
+}
+
+// 生成随机mid
+function generateRandomMid() {
+    // 生成格式如：6921600071816775639 的19位数字
+    const base = 6920000000000000000;
+    const random = Math.floor(Math.random() * 2000000000000);
+    return String(base + random);
+}
+
+// 根据任务类型生成mid列表
+function generateMidList(task) {
+    const mids = [];
+    const generationType = task.generationType || '';
+    const materialQuantity = task.materialQuantity || 1;
+    const productQuantity = task.productQuantity || 1;
+    
+    // 判断是否为多品类型
+    const isMultiProduct = generationType.includes('多品');
+    // 判断是否为多图类型
+    const isMultiImage = generationType.includes('多图');
+    
+    if (isMultiProduct && isMultiImage) {
+        // 多品多图：每个素材对应多个mid（每个商品一个mid）
+        // 总共需要 materialQuantity * productQuantity 个mid
+        const totalMids = materialQuantity * productQuantity;
+        for (let i = 0; i < totalMids; i++) {
+            mids.push(generateRandomMid());
+        }
+    } else if (isMultiProduct) {
+        // 多品单图：每个商品一个mid，总共 productQuantity 个mid
+        for (let i = 0; i < productQuantity; i++) {
+            mids.push(generateRandomMid());
+        }
+    } else if (isMultiImage) {
+        // 单品多图：每个素材一个mid，总共 materialQuantity 个mid
+        for (let i = 0; i < materialQuantity; i++) {
+            mids.push(generateRandomMid());
+        }
+    } else {
+        // 单品单图：1个mid
+        mids.push(generateRandomMid());
+    }
+    
+    return mids;
 }
 
 // 格式化提单人显示
@@ -529,6 +620,151 @@ function openBulkUpload() {
 }
 
 
+// 标签选项配置 - 根据Excel内容定义
+const tagOptions = {
+    productFrameShape: ['矩形', '圆形', '圆角矩形', '不规则', '椭圆', '菱形', '其他'], // 图片-商品框形状
+    productDisplayForm: ['平铺', '堆叠', '悬挂', '组合', '单件', '多件', '其他'], // 图片-商品展示形态
+    priceTagStyle: ['标签', '条码', '文字', '图标', '无', '其他'], // 图片-价格标签样式
+    materialSource: ['拍摄', '设计', '合成', '下载', '其他'], // 图片-素材来源
+    taskTags: ['新品', '促销', '热卖', '限时', '清仓', '推荐', '精选'], // 任务标签（多选）
+    externalElements: ['折扣', '优惠券', '赠品', '包邮', '秒杀', '拼团', '其他'], // 图片-外推要素（单选）
+    contentStrategy: ['产品展示', '场景应用', '功能说明', '对比展示', '情感营销', '其他'], // 图片-内容策略（单选）
+    infoPriority: ['价格优先', '产品优先', '功能优先', '品牌优先', '其他'], // 图片-信息主次（单选）
+    albumFeatures: ['系列', '套装', '单件', '组合', '其他'], // 图片-图集特征（单选）
+    marketingElements: ['限时', '限量', '特价', '买赠', '满减', '其他'], // 营销元素（多选）
+    valueProposition: ['性价比', '品质', '时尚', '实用', '个性', '其他'], // 价值主张（多选）
+    audienceTags: ['儿童', '青年', '中年', '老年', '男性', '女性', '通用'], // 人群标签（多选）
+    designer: ['AIGC', 'ued', 'OA001', 'OA002', 'OA003', '其他'], // 图片-设计师（支持修改）
+    requester: ['俊俊', '小美', '阿强', '丽丽', '小明', '小红', '小张'] // 图片-需求人（下拉选择）
+};
+
+// 多选标签类型
+const multiSelectTags = ['taskTags', 'marketingElements', 'valueProposition', 'audienceTags'];
+
+// 生成下拉选择框的辅助函数
+function generateSelectInput(tagType, currentValue, fileName, options, isMultiple = false) {
+    const optionsList = tagOptions[tagType] || options || [];
+    const currentValues = isMultiple && currentValue ? currentValue.split(',').map(v => v.trim()).filter(v => v) : [];
+    
+    // 对文件名进行转义，防止XSS
+    const escapedFileName = fileName.replace(/'/g, "\\'");
+    
+    if (isMultiple) {
+        // 多选标签使用自定义的多选下拉框
+        const displayValue = currentValues.length > 0 ? currentValues.join(', ') : '请选择';
+        const optionsHTML = optionsList.map(option => {
+            const isSelected = currentValues.includes(option);
+            return `<label class="multi-select-option">
+                        <input type="checkbox" value="${option}" ${isSelected ? 'checked' : ''}>
+                        <span>${option}</span>
+                    </label>`;
+        }).join('');
+        
+        return `<div class="multi-select-dropdown" data-file-name="${escapedFileName}" data-tag-type="${tagType}">
+                    <div class="multi-select-display" onclick="toggleMultiSelectDropdown(this)">
+                        <span class="multi-select-text">${displayValue}</span>
+                        <span class="multi-select-arrow">▼</span>
+                    </div>
+                    <div class="multi-select-menu" style="display: none;">
+                        ${optionsHTML}
+                    </div>
+                </div>`;
+    } else {
+        // 单选标签使用普通下拉框
+        const onChangeHandler = `onchange="updateBulkMaterialTag('${escapedFileName}', '${tagType}', this.value)"`;
+        
+        let selectHTML = `<select class="form-control form-control-sm bulk-tag-input"
+                                data-file-name="${escapedFileName}"
+                                data-tag-type="${tagType}"
+                                ${onChangeHandler}>
+                            <option value="">请选择</option>`;
+        
+        optionsList.forEach(option => {
+            const isSelected = currentValue === option;
+            selectHTML += `<option value="${option}" ${isSelected ? 'selected' : ''}>${option}</option>`;
+        });
+        
+        selectHTML += '</select>';
+        return selectHTML;
+    }
+}
+
+// 切换多选下拉框显示
+function toggleMultiSelectDropdown(element) {
+    const dropdown = element.closest('.multi-select-dropdown');
+    const menu = dropdown.querySelector('.multi-select-menu');
+    const isOpen = menu.style.display !== 'none';
+    
+    // 关闭所有其他下拉框
+    document.querySelectorAll('.multi-select-menu').forEach(m => {
+        if (m !== menu) {
+            m.style.display = 'none';
+            m.closest('.multi-select-dropdown').classList.remove('active');
+        }
+    });
+    
+    // 切换当前下拉框
+    if (isOpen) {
+        menu.style.display = 'none';
+        dropdown.classList.remove('active');
+    } else {
+        menu.style.display = 'block';
+        dropdown.classList.add('active');
+    }
+}
+
+// 更新多选标签值
+function updateMultiSelectCheckbox(element) {
+    const dropdown = element.closest('.multi-select-dropdown');
+    const fileName = dropdown.dataset.fileName;
+    const tagType = dropdown.dataset.tagType;
+    const checkboxes = dropdown.querySelectorAll('input[type="checkbox"]');
+    
+    const selectedValues = Array.from(checkboxes)
+        .filter(cb => cb.checked)
+        .map(cb => cb.value)
+        .join(', ');
+    
+    // 更新显示文本
+    const displayText = selectedValues || '请选择';
+    dropdown.querySelector('.multi-select-text').textContent = displayText;
+    
+    // 更新标签值
+    updateBulkMaterialTag(fileName, tagType, selectedValues);
+    
+    // 重新对齐行高
+    alignTableRows();
+}
+
+// 点击外部关闭所有多选下拉框（使用事件委托，在页面加载后自动生效）
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initMultiSelectEvents);
+} else {
+    initMultiSelectEvents();
+}
+
+function initMultiSelectEvents() {
+    // 点击外部关闭所有多选下拉框
+    document.addEventListener('click', function(event) {
+        if (!event.target.closest('.multi-select-dropdown')) {
+            document.querySelectorAll('.multi-select-menu').forEach(menu => {
+                menu.style.display = 'none';
+                const dropdown = menu.closest('.multi-select-dropdown');
+                if (dropdown) {
+                    dropdown.classList.remove('active');
+                }
+            });
+        }
+    });
+
+    // 多选下拉框选项点击事件处理（使用事件委托）
+    document.addEventListener('change', function(event) {
+        if (event.target.closest('.multi-select-dropdown input[type="checkbox"]')) {
+            updateMultiSelectCheckbox(event.target);
+        }
+    });
+}
+
 // 渲染批量上传表格
 function renderBulkUploadTable() {
     const tbodyFixed = document.getElementById('bulkUploadTableBodyFixed');
@@ -543,29 +779,32 @@ function renderBulkUploadTable() {
     headerRowFixed.innerHTML = `
         <th width="120">任务ID</th>
         <th width="300">任务要求</th>
+        <th width="180">需求mid</th>
         <th width="250">素材名</th>
     `;
     tbodyFixed.appendChild(headerRowFixed);
     
-    // 添加可滚动列表格头部行
+    // 添加可滚动列表格头部行 - 按照Excel结构：14个标签列
     const headerRowScrollable = document.createElement('tr');
     headerRowScrollable.className = 'bulk-upload-header-row';
     
-    // 动态生成标签列标题（默认显示10个，可以根据需要调整）
-    const defaultTagCount = 10;
-    let tagHeaders = '';
-    for (let i = 1; i <= defaultTagCount; i++) {
-        tagHeaders += `<th width="100">标签${i}</th>`;
-    }
+    headerRowScrollable.innerHTML = `
+        <th width="130">图片-商品框形状</th>
+        <th width="130">图片-商品展示形态</th>
+        <th width="130">图片-价格标签样式</th>
+        <th width="130">图片-素材来源</th>
+        <th width="130">任务标签（多选）</th>
+        <th width="130">图片-外推要素（单选）</th>
+        <th width="130">图片-内容策略（单选）</th>
+        <th width="130">图片-信息主次（单选）</th>
+        <th width="130">图片-图集特征（单选）</th>
+        <th width="130">营销元素（多选）</th>
+        <th width="130">价值主张（多选）</th>
+        <th width="130">人群标签（多选）</th>
+        <th width="130">图片-设计师（支持修改）</th>
+        <th width="130">图片-需求人</th>
+    `;
     
-    // 添加"添加标签列"按钮
-    tagHeaders += `<th width="120" class="add-tag-column-header">
-        <button class="btn btn-sm btn-outline-primary" onclick="addTagColumn()" title="添加标签列">
-            <i class="fas fa-plus"></i> 添加标签
-        </button>
-    </th>`;
-    
-    headerRowScrollable.innerHTML = tagHeaders;
     tbodyScrollable.appendChild(headerRowScrollable);
     
     // 添加任务列表 - 合并相同任务ID和任务要求的显示
@@ -576,9 +815,42 @@ function renderBulkUploadTable() {
         // 获取该任务的素材列表
         const taskFiles = allBulkFiles.filter(file => file.taskId === taskId);
         
+        // 生成该任务的mid列表
+        const taskMids = generateMidList(task);
+        
         if (taskFiles.length > 0) {
             // 如果有素材，为每个素材创建一行，但合并任务ID和任务要求
             taskFiles.forEach((file, index) => {
+                // 根据任务类型和素材索引确定显示的mid
+                const generationType = task.generationType || '';
+                const isMultiProduct = generationType.includes('多品');
+                const isMultiImage = generationType.includes('多图');
+                const productQuantity = task.productQuantity || 1;
+                
+                let midForThisRow = '';
+                if (isMultiProduct && isMultiImage) {
+                    // 多品多图：每个素材行显示多个mid（每个商品一个mid）
+                    const startIndex = index * productQuantity;
+                    const endIndex = Math.min(startIndex + productQuantity, taskMids.length);
+                    midForThisRow = taskMids.slice(startIndex, endIndex).join('<br>');
+                } else if (isMultiProduct) {
+                    // 多品单图：所有mid显示在同一行（每个商品一个mid）
+                    if (index === 0) {
+                        midForThisRow = taskMids.join('<br>');
+                    } else {
+                        midForThisRow = ''; // 其他行不显示mid
+                    }
+                } else if (isMultiImage) {
+                    // 单品多图：每个素材行显示一个mid
+                    if (index < taskMids.length) {
+                        midForThisRow = taskMids[index];
+                    }
+                } else {
+                    // 单品单图：只显示一个mid
+                    if (index === 0 && taskMids.length > 0) {
+                        midForThisRow = taskMids[0];
+                    }
+                }
                 // 创建固定列行
                 const rowFixed = document.createElement('tr');
                 rowFixed.className = 'bulk-upload-row';
@@ -594,21 +866,67 @@ function renderBulkUploadTable() {
                 // 提取素材名称（去掉任务ID前缀）
                 const materialName = file.name.replace(`${taskId}_`, '');
                 
-                // 生成动态数量的标签单元格（直接可编辑）
-                let tagInputs = '';
-                for (let i = 1; i <= defaultTagCount; i++) {
-                    tagInputs += `
-                        <td class="tag-cell" 
-                            contenteditable="true" 
-                            data-task-id="${taskId}" 
-                            data-file-index="${index}" 
-                            data-tag-index="${i}"
-                            data-placeholder="标签${i}">
-                        </td>
+                // 生成素材缩略图预览URL
+                const thumbnailURL = URL.createObjectURL(file);
+                const isImageFile = file.type.startsWith('image/');
+                
+                // 获取素材标签数据
+                const tags = bulkMaterialTags[file.name] || {
+                    productFrameShape: '',        // 图片-商品框形状
+                    productDisplayForm: '',       // 图片-商品展示形态
+                    priceTagStyle: '',            // 图片-价格标签样式
+                    materialSource: task.materialSource || '', // 图片-素材来源
+                    taskTags: '',                 // 任务标签（多选）
+                    externalElements: '',         // 图片-外推要素（单选）
+                    contentStrategy: '',          // 图片-内容策略（单选）
+                    infoPriority: '',             // 图片-信息主次（单选）
+                    albumFeatures: '',            // 图片-图集特征（单选）
+                    marketingElements: '',        // 营销元素（多选）
+                    valueProposition: '',         // 价值主张（多选）
+                    audienceTags: '',             // 人群标签（多选）
+                    designer: task.designer || '', // 图片-设计师（支持修改）
+                    requester: task.submitter || '' // 图片-需求人
+                };
+                
+                // 生成标签输入单元格 - 按照Excel结构（14个标签列），全部改为下拉选择
+                const tagInputs = `
+                    <td class="tag-cell">${generateSelectInput('productFrameShape', tags.productFrameShape || '', file.name, [], false)}</td>
+                    <td class="tag-cell">${generateSelectInput('productDisplayForm', tags.productDisplayForm || '', file.name, [], false)}</td>
+                    <td class="tag-cell">${generateSelectInput('priceTagStyle', tags.priceTagStyle || '', file.name, [], false)}</td>
+                    <td class="tag-cell">${generateSelectInput('materialSource', tags.materialSource || '', file.name, [], false)}</td>
+                    <td class="tag-cell">${generateSelectInput('taskTags', tags.taskTags || '', file.name, [], true)}</td>
+                    <td class="tag-cell">${generateSelectInput('externalElements', tags.externalElements || '', file.name, [], false)}</td>
+                    <td class="tag-cell">${generateSelectInput('contentStrategy', tags.contentStrategy || '', file.name, [], false)}</td>
+                    <td class="tag-cell">${generateSelectInput('infoPriority', tags.infoPriority || '', file.name, [], false)}</td>
+                    <td class="tag-cell">${generateSelectInput('albumFeatures', tags.albumFeatures || '', file.name, [], false)}</td>
+                    <td class="tag-cell">${generateSelectInput('marketingElements', tags.marketingElements || '', file.name, [], true)}</td>
+                    <td class="tag-cell">${generateSelectInput('valueProposition', tags.valueProposition || '', file.name, [], true)}</td>
+                    <td class="tag-cell">${generateSelectInput('audienceTags', tags.audienceTags || '', file.name, [], true)}</td>
+                    <td class="tag-cell">${generateSelectInput('designer', tags.designer || '', file.name, [], false)}</td>
+                    <td class="tag-cell">${generateSelectInput('requester', tags.requester || '', file.name, [], false)}</td>
                     `;
+                
+                // 计算mid列的行跨度（用于单品单图和多品单图）
+                let midRowspan = 0;
+                let showMidInFirstRow = false;
+                
+                if (isMultiProduct && isMultiImage) {
+                    // 多品多图：每个素材行都显示mid，不使用rowspan
+                    showMidInFirstRow = false;
+                } else if (isMultiProduct) {
+                    // 多品单图：只在第一行显示mid，使用rowspan
+                    midRowspan = index === 0 ? taskFiles.length : 0;
+                    showMidInFirstRow = index === 0;
+                } else if (isMultiImage) {
+                    // 单品多图：每个素材行显示一个mid，不使用rowspan
+                    showMidInFirstRow = false;
+                } else {
+                    // 单品单图：只在第一行显示mid，使用rowspan
+                    midRowspan = index === 0 ? taskFiles.length : 0;
+                    showMidInFirstRow = index === 0;
                 }
                 
-                // 如果是第一个素材，显示任务ID和任务要求
+                // 如果是第一个素材，显示任务ID、任务要求和mid
                 if (index === 0) {
                     rowFixed.innerHTML = `
                         <td class="task-id-cell" rowspan="${taskFiles.length}">
@@ -621,21 +939,47 @@ function renderBulkUploadTable() {
                                 <span class="requirement-badge">${task.generationType}</span>
                             </div>
                         </td>
+                        <td class="mid-cell" ${midRowspan > 0 ? `rowspan="${midRowspan}"` : ''}>
+                            ${midForThisRow}
+                        </td>
                         <td class="material-name-cell">
-                            <span class="material-name-text">${materialName}</span>
+                            <div class="material-name-with-thumbnail">
+                                ${isImageFile 
+                                    ? `<img src="${thumbnailURL}" alt="${materialName}" class="material-thumbnail" onerror="this.onerror=null; this.style.display='none';">
+                                       <span class="material-name-text">${materialName}</span>`
+                                    : `<div class="material-thumbnail material-thumbnail-placeholder">
+                                         <i class="fas fa-file"></i>
+                                       </div>
+                                       <span class="material-name-text">${materialName}</span>`
+                                }
+                            </div>
                         </td>
                     `;
                 } else {
-                    // 其他素材行只显示素材名
+                    // 其他素材行：如果是多品多图或单品多图，显示mid；否则不显示（使用rowspan）
+                    const midCell = (isMultiProduct && isMultiImage) || (isMultiImage && !isMultiProduct) 
+                        ? `<td class="mid-cell">${midForThisRow}</td>` 
+                        : '';
+                    
                     rowFixed.innerHTML = `
+                        ${midCell}
                         <td class="material-name-cell">
-                            <span class="material-name-text">${materialName}</span>
+                            <div class="material-name-with-thumbnail">
+                                ${isImageFile 
+                                    ? `<img src="${thumbnailURL}" alt="${materialName}" class="material-thumbnail" onerror="this.onerror=null; this.style.display='none';">
+                                       <span class="material-name-text">${materialName}</span>`
+                                    : `<div class="material-thumbnail material-thumbnail-placeholder">
+                                         <i class="fas fa-file"></i>
+                                       </div>
+                                       <span class="material-name-text">${materialName}</span>`
+                                }
+                            </div>
                         </td>
                     `;
                 }
                 
-                // 可滚动列始终显示标签输入框，并添加一个空单元格对应"添加标签列"按钮
-                rowScrollable.innerHTML = tagInputs + '<td class="tag-cell add-tag-column-cell"></td>';
+                // 可滚动列显示标签输入框
+                rowScrollable.innerHTML = tagInputs;
                 
                 tbodyFixed.appendChild(rowFixed);
                 tbodyScrollable.appendChild(rowScrollable);
@@ -650,19 +994,27 @@ function renderBulkUploadTable() {
             rowScrollable.className = 'bulk-upload-row';
             rowScrollable.dataset.taskId = taskId;
             
-            // 生成动态数量的空标签单元格（直接可编辑）
-            let emptyTagInputs = '';
-            for (let i = 1; i <= defaultTagCount; i++) {
-                emptyTagInputs += `
-                    <td class="tag-cell" 
-                        contenteditable="true" 
-                        data-task-id="${taskId}" 
-                        data-file-index="0" 
-                        data-tag-index="${i}"
-                        data-placeholder="标签${i}">
-                    </td>
-                `;
-            }
+            // 生成mid显示（即使没有素材也显示mid）
+            const taskMids = generateMidList(task);
+            const midDisplay = taskMids.join('<br>');
+            
+            // 生成空标签单元格 - 按照Excel结构（14个标签列），全部改为下拉选择
+            const emptyTagInputs = `
+                <td class="tag-cell">${generateSelectInput('productFrameShape', '', '', [], false)}</td>
+                <td class="tag-cell">${generateSelectInput('productDisplayForm', '', '', [], false)}</td>
+                <td class="tag-cell">${generateSelectInput('priceTagStyle', '', '', [], false)}</td>
+                <td class="tag-cell">${generateSelectInput('materialSource', task.materialSource || '', '', [], false)}</td>
+                <td class="tag-cell">${generateSelectInput('taskTags', '', '', [], true)}</td>
+                <td class="tag-cell">${generateSelectInput('externalElements', '', '', [], false)}</td>
+                <td class="tag-cell">${generateSelectInput('contentStrategy', '', '', [], false)}</td>
+                <td class="tag-cell">${generateSelectInput('infoPriority', '', '', [], false)}</td>
+                <td class="tag-cell">${generateSelectInput('albumFeatures', '', '', [], false)}</td>
+                <td class="tag-cell">${generateSelectInput('marketingElements', '', '', [], true)}</td>
+                <td class="tag-cell">${generateSelectInput('valueProposition', '', '', [], true)}</td>
+                <td class="tag-cell">${generateSelectInput('audienceTags', '', '', [], true)}</td>
+                <td class="tag-cell">${generateSelectInput('designer', task.designer || '', '', [], false)}</td>
+                <td class="tag-cell">${generateSelectInput('requester', task.submitter || '', '', [], false)}</td>
+            `;
             
             rowFixed.innerHTML = `
                 <td class="task-id-cell">
@@ -675,12 +1027,15 @@ function renderBulkUploadTable() {
                         <span class="requirement-badge">${task.generationType}</span>
                     </div>
                 </td>
+                <td class="mid-cell">
+                    ${midDisplay}
+                </td>
                 <td class="material-name-cell">
                     <span class="material-name-text" style="color: #999;">暂无素材</span>
                 </td>
             `;
             
-            rowScrollable.innerHTML = emptyTagInputs + '<td class="tag-cell add-tag-column-cell"></td>';
+            rowScrollable.innerHTML = emptyTagInputs;
             
             tbodyFixed.appendChild(rowFixed);
             tbodyScrollable.appendChild(rowScrollable);
@@ -695,6 +1050,104 @@ function renderBulkUploadTable() {
         document.getElementById('bulkParseBtn').style.display = 'none';
         document.getElementById('confirmUploadBtn').style.display = 'none';
     }
+    
+    // 同步固定列表格和可滚动列表格的垂直滚动
+    syncTableScroll();
+    
+    // 确保固定列和可滚动列的行高对齐
+    alignTableRows();
+}
+
+// 对齐固定列和可滚动列的行高
+function alignTableRows() {
+    // 使用setTimeout确保DOM已完全渲染
+    setTimeout(() => {
+        const fixedRows = document.querySelectorAll('#bulkUploadTableBodyFixed .bulk-upload-row');
+        const scrollableRows = document.querySelectorAll('#bulkUploadTableBodyScrollable .bulk-upload-row');
+        
+        if (fixedRows.length !== scrollableRows.length) {
+            console.warn('固定列和可滚动列的行数不匹配:', fixedRows.length, 'vs', scrollableRows.length);
+            return;
+        }
+        
+        // 对齐表头行
+        const fixedHeader = document.querySelector('#bulkUploadTableBodyFixed .bulk-upload-header-row');
+        const scrollableHeader = document.querySelector('#bulkUploadTableBodyScrollable .bulk-upload-header-row');
+        if (fixedHeader && scrollableHeader) {
+            const fixedHeaderHeight = fixedHeader.offsetHeight;
+            const scrollableHeaderHeight = scrollableHeader.offsetHeight;
+            const maxHeaderHeight = Math.max(fixedHeaderHeight, scrollableHeaderHeight);
+            if (maxHeaderHeight > 0) {
+                fixedHeader.style.height = maxHeaderHeight + 'px';
+                scrollableHeader.style.height = maxHeaderHeight + 'px';
+            }
+        }
+        
+        // 为每一对数据行设置相同的高度
+        fixedRows.forEach((fixedRow, index) => {
+            const scrollableRow = scrollableRows[index];
+            if (scrollableRow) {
+                // 获取两个行的实际高度，取较大值
+                const fixedHeight = fixedRow.offsetHeight;
+                const scrollableHeight = scrollableRow.offsetHeight;
+                const maxHeight = Math.max(fixedHeight, scrollableHeight);
+                
+                // 设置相同的高度
+                if (maxHeight > 0) {
+                    fixedRow.style.height = maxHeight + 'px';
+                    scrollableRow.style.height = maxHeight + 'px';
+                }
+            }
+        });
+    }, 50);
+}
+
+// 同步固定列表格和可滚动列表格的垂直滚动
+function syncTableScroll() {
+    const fixedContainer = document.querySelector('.fixed-columns-container');
+    const scrollableContainer = document.querySelector('.scrollable-columns-container');
+    
+    if (!fixedContainer || !scrollableContainer) {
+        return;
+    }
+    
+    // 移除之前的事件监听器（如果存在）
+    if (fixedContainer._scrollSyncHandler) {
+        fixedContainer.removeEventListener('scroll', fixedContainer._scrollSyncHandler);
+    }
+    if (scrollableContainer._scrollSyncHandler) {
+        scrollableContainer.removeEventListener('scroll', scrollableContainer._scrollSyncHandler);
+    }
+    
+    // 固定列表格滚动时，同步可滚动列表格
+    fixedContainer._scrollSyncHandler = function() {
+        if (!fixedContainer._isScrolling) {
+            scrollableContainer._isScrolling = true;
+            scrollableContainer.scrollTop = fixedContainer.scrollTop;
+            setTimeout(() => {
+                scrollableContainer._isScrolling = false;
+            }, 50);
+        }
+    };
+    
+    // 可滚动列表格滚动时，同步固定列表格
+    scrollableContainer._scrollSyncHandler = function() {
+        if (!scrollableContainer._isScrolling) {
+            fixedContainer._isScrolling = true;
+            fixedContainer.scrollTop = scrollableContainer.scrollTop;
+            setTimeout(() => {
+                fixedContainer._isScrolling = false;
+            }, 50);
+        }
+    };
+    
+    fixedContainer.addEventListener('scroll', fixedContainer._scrollSyncHandler);
+    scrollableContainer.addEventListener('scroll', scrollableContainer._scrollSyncHandler);
+    
+    // 监听窗口大小变化，重新对齐行
+    window.addEventListener('resize', function() {
+        setTimeout(alignTableRows, 100);
+    });
 }
 
 // 添加标签列功能
@@ -986,14 +1439,26 @@ function handleBulkFileSelect(event) {
         allBulkFiles.push(file);
         console.log('File added to allBulkFiles:', file.name);
         
-        // 初始化标签信息
+        // 获取任务信息，用于初始化标签
+        const task = taskData.find(t => t.id === taskId);
+        
+        // 初始化标签信息，使用任务信息作为默认值 - 使用新的14个标签结构
         bulkMaterialTags[file.name] = {
             name: file.name,
-            category: '',
-            channel: '',
-            designer: '',
-            productId: '',
-            textTags: ''
+            productFrameShape: '',        // 图片-商品框形状
+            productDisplayForm: '',       // 图片-商品展示形态
+            priceTagStyle: '',            // 图片-价格标签样式
+            materialSource: task ? (task.materialSource || '') : '', // 图片-素材来源
+            taskTags: '',                 // 任务标签（多选）
+            externalElements: '',         // 图片-外推要素（单选）
+            contentStrategy: '',          // 图片-内容策略（单选）
+            infoPriority: '',             // 图片-信息主次（单选）
+            albumFeatures: '',            // 图片-图集特征（单选）
+            marketingElements: '',        // 营销元素（多选）
+            valueProposition: '',         // 价值主张（多选）
+            audienceTags: '',             // 人群标签（多选）
+            designer: task ? (task.designer || '') : '', // 图片-设计师（支持修改）
+            requester: task ? (task.submitter || '') : '' // 图片-需求人
         };
     });
     
@@ -1056,18 +1521,36 @@ function handleBulkDrop(event) {
             return;
         }
         
+        // 从文件名中提取任务ID
+        const taskId = extractTaskIdFromFileName(file.name);
+        if (taskId) {
+            file.taskId = taskId;
+        }
+        
         // 添加到全局文件列表
         allBulkFiles.push(file);
         console.log('Dropped file added to allBulkFiles:', file.name);
         
-        // 初始化标签信息
+        // 获取任务信息，用于初始化标签
+        const task = taskId ? taskData.find(t => t.id === taskId) : null;
+        
+        // 初始化标签信息，使用任务信息作为默认值 - 使用新的14个标签结构
         bulkMaterialTags[file.name] = {
             name: file.name,
-            category: '',
-            channel: '',
-            designer: '',
-            productId: '',
-            textTags: ''
+            productFrameShape: '',        // 图片-商品框形状
+            productDisplayForm: '',       // 图片-商品展示形态
+            priceTagStyle: '',            // 图片-价格标签样式
+            materialSource: task ? (task.materialSource || '') : '', // 图片-素材来源
+            taskTags: '',                 // 任务标签（多选）
+            externalElements: '',         // 图片-外推要素（单选）
+            contentStrategy: '',          // 图片-内容策略（单选）
+            infoPriority: '',             // 图片-信息主次（单选）
+            albumFeatures: '',            // 图片-图集特征（单选）
+            marketingElements: '',        // 营销元素（多选）
+            valueProposition: '',         // 价值主张（多选）
+            audienceTags: '',             // 人群标签（多选）
+            designer: task ? (task.designer || '') : '', // 图片-设计师（支持修改）
+            requester: task ? (task.submitter || '') : '' // 图片-需求人
         };
     });
     
@@ -1097,18 +1580,36 @@ function addBulkFiles(files) {
             return;
         }
         
+        // 从文件名中提取任务ID
+        const taskId = extractTaskIdFromFileName(file.name);
+        if (taskId) {
+            file.taskId = taskId;
+        }
+        
         allBulkFiles.push(file);
         validFiles.push(file);
         console.log('File added to allBulkFiles:', file.name);
         
-        // 初始化标签信息
+        // 获取任务信息，用于初始化标签
+        const task = taskId ? taskData.find(t => t.id === taskId) : null;
+        
+        // 初始化标签信息，使用任务信息作为默认值 - 使用新的14个标签结构
         bulkMaterialTags[file.name] = {
             name: file.name,
-            category: '',
-            channel: '',
-            designer: '',
-            productId: '',
-            textTags: ''
+            productFrameShape: '',        // 图片-商品框形状
+            productDisplayForm: '',       // 图片-商品展示形态
+            priceTagStyle: '',            // 图片-价格标签样式
+            materialSource: task ? (task.materialSource || '') : '', // 图片-素材来源
+            taskTags: '',                 // 任务标签（多选）
+            externalElements: '',         // 图片-外推要素（单选）
+            contentStrategy: '',          // 图片-内容策略（单选）
+            infoPriority: '',             // 图片-信息主次（单选）
+            albumFeatures: '',            // 图片-图集特征（单选）
+            marketingElements: '',        // 营销元素（多选）
+            valueProposition: '',         // 价值主张（多选）
+            audienceTags: '',             // 人群标签（多选）
+            designer: task ? (task.designer || '') : '', // 图片-设计师（支持修改）
+            requester: task ? (task.submitter || '') : '' // 图片-需求人
         };
     });
     
@@ -1965,6 +2466,9 @@ function updateBulkMaterialTag(fileName, tagType, value) {
     if (bulkMaterialTags[fileName]) {
         bulkMaterialTags[fileName][tagType] = value;
     }
+    
+    // 标签更新后重新对齐行高
+    alignTableRows();
 }
 
 // 更新素材名称（保留原有函数以兼容）
@@ -2191,10 +2695,40 @@ function resetColumnConfig() {
     renderColumnConfig();
 }
 
+// 调试函数
+function debugColumns() {
+    console.log('当前列配置:', columnManager.columns);
+    console.log('可见列:', columnManager.visibleColumns);
+    
+    // 查找安心购信息列
+    const anxinColumn = columnManager.columns.find(col => col.key === 'anxinInfo');
+    console.log('安心购信息列:', anxinColumn);
+    
+    alert(`安心购信息列状态: ${anxinColumn ? '存在' : '不存在'}\n可见性: ${anxinColumn ? anxinColumn.visible : 'N/A'}`);
+}
+
+function resetColumns() {
+    localStorage.removeItem('tableColumnConfig');
+    columnManager.columns = columnManager.initializeColumns();
+    columnManager.visibleColumns = columnManager.columns.filter(col => col.visible);
+    renderTable();
+    alert('列配置已重置');
+}
+
 // 初始化页面
 document.addEventListener('DOMContentLoaded', function() {
     taskData = [...mockData];
     setDefaultTimeRange();
+    
+    // 强制重置列配置以确保安心购信息列显示
+    localStorage.removeItem('tableColumnConfig');
+    columnManager.columns = columnManager.initializeColumns();
+    columnManager.visibleColumns = columnManager.columns.filter(col => col.visible);
+    
+    // 调试：检查列配置
+    console.log('当前列配置:', columnManager.columns);
+    console.log('可见列:', columnManager.visibleColumns);
+    
     renderTable();
 });
 
@@ -2361,6 +2895,9 @@ function renderTableRow(row, task) {
             case 'productId':
                 content = task.productId;
                 td.style.whiteSpace = 'pre-line';
+                break;
+            case 'anxinInfo':
+                content = formatAnxinInfo(task.anxinInfo, task.productId);
                 break;
             case 'priceInfo':
                 content = task.priceInfo;
