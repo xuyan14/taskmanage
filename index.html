@@ -4,14 +4,19 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>创意生产任务管理</title>
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="styles.css?v=20260609v">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 </head>
 <body>
+    <div class="app-layout">
+    <header class="page-header">
+        <h1 class="page-title">创意生产平台</h1>
+    </header>
     <div class="container">
+        <div class="table-page">
         <!-- 筛选项区域 -->
-        <div class="filter-section">
-            <h3>2、筛选项</h3>
+        <div class="filter-section search-bar">
+            <h3 class="section-label">筛选项</h3>
             <div class="filter-row">
                 <div class="filter-item">
                     <label>创建时间</label>
@@ -211,22 +216,27 @@
         </div>
 
         <!-- 列表区域 -->
-        <div class="list-section">
-            <h3>1、列表字段</h3>
+        <div class="list-section table-container-wrap">
             <div class="list-header">
-                <div class="checkbox-wrapper">
-                    <input type="checkbox" id="selectAll" onchange="toggleSelectAll()">
-                    <label for="selectAll">全选</label>
+                <div class="list-header-left">
+                    <div class="checkbox-wrapper">
+                        <input type="checkbox" id="selectAll" onchange="toggleSelectAll()">
+                        <label for="selectAll">全选</label>
+                    </div>
+                    <div class="bulk-actions btn-group" id="bulkActions" style="display: none;">
+                        <button class="btn btn-primary" onclick="assignDesigner()">分配设计师</button>
+                        <button class="btn btn-warning" onclick="batchStartProduction()">批量开始生产</button>
+                        <button class="btn btn-success" onclick="exportTasks()">导出任务</button>
+                        <button class="btn btn-info" onclick="openBulkUpload()">批量上传</button>
+                        <button class="btn btn-primary" id="batchExecuteSkillBtn" onclick="openSkillBatchModal()" style="display: none;">
+                            <i class="fas fa-bolt"></i> Skill 批量执行
+                        </button>
+                    </div>
                 </div>
-                <div class="header-actions">
+                <div class="list-header-right">
                     <button class="btn btn-secondary" onclick="toggleColumnConfig()">
                         <i class="fas fa-columns"></i> 列设置
                     </button>
-                    <div class="bulk-actions" id="bulkActions" style="display: none;">
-                        <button class="btn btn-primary" onclick="assignDesigner()">分配设计师</button>
-                        <button class="btn btn-success" onclick="exportTasks()">导出任务</button>
-                        <button class="btn btn-info" onclick="openBulkUpload()">批量上传</button>
-                    </div>
                 </div>
             </div>
             
@@ -414,9 +424,73 @@
                 </table>
             </div>
         </div>
-
+        </div>
 
     </div>
+    </div>
+
+    <!-- Skill 批量执行弹窗 -->
+    <div id="skillBatchModal" class="modal">
+        <div class="modal-content skill-batch-modal-content">
+            <div class="modal-header">
+                <h3>Skill 批量执行</h3>
+                <span class="close" onclick="closeModal('skillBatchModal')">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="skill-batch-summary" id="skillBatchSummary"></div>
+                <div class="skill-batch-filters">
+                    <div class="skill-filter-item">
+                        <label>渠道筛选</label>
+                        <select id="skillFilterChannel" onchange="onSkillFilterChange()">
+                            <option value="">全部渠道</option>
+                            <option value="字节">字节</option>
+                            <option value="腾讯">腾讯</option>
+                            <option value="小红书">小红书</option>
+                        </select>
+                    </div>
+                    <div class="skill-filter-item">
+                        <label>生成类型筛选</label>
+                        <select id="skillFilterGenType" onchange="onSkillFilterChange()">
+                            <option value="">全部类型</option>
+                            <option value="单品单图">单品单图</option>
+                            <option value="实拍视频">实拍视频</option>
+                        </select>
+                    </div>
+                    <div class="skill-filter-item skill-select-item">
+                        <label>选择 Skill</label>
+                        <select id="skillSelect" onchange="onSkillSelectChange()">
+                            <option value="">请选择 Skill</option>
+                        </select>
+                    </div>
+                </div>
+                <p class="skill-batch-hint" id="skillBatchHint"></p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('skillBatchModal')">取消</button>
+                <button class="btn btn-primary" id="confirmBatchExecuteSkillBtn" onclick="confirmBatchExecuteSkill()" disabled>
+                    <i class="fas fa-bolt"></i> 确认执行
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Skill 结果处理弹窗 -->
+    <div id="skillResultModal" class="modal">
+        <div class="modal-content skill-result-modal-content">
+            <div class="modal-header">
+                <h3 id="skillResultModalTitle">Skill 生成结果</h3>
+                <span class="close" onclick="closeModal('skillResultModal')">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="skill-result-meta" id="skillResultMeta"></div>
+                <div class="skill-result-grid" id="skillResultGrid"></div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('skillResultModal')">关闭</button>
+            </div>
+        </div>
+    </div>
+    <input type="file" id="skillLocalUploadInput" accept="image/*" style="display: none;">
 
     <!-- 分配设计师弹窗 -->
     <div id="assignModal" class="modal">
@@ -627,6 +701,7 @@
         </div>
     </div>
 
-    <script src="script.js"></script>
+    <script src="skill-module.js?v=20260609v"></script>
+    <script src="script.js?v=20260609v"></script>
 </body>
 </html>

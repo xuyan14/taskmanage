@@ -26,7 +26,7 @@ class TableColumnManager {
     
     initializeColumns() {
         return [
-            { key: 'select', label: '选择', type: 'checkbox', width: 60, visible: true, fixed: true },
+            { key: 'select', label: '选择', type: 'checkbox', width: 60, visible: true, fixed: true, cssClass: 'col-select' },
             { key: 'createTime', label: '创建时间', type: 'datetime', width: 140, visible: true, sortable: true },
             { key: 'expectedTime', label: '期望交付时间', type: 'datetime', width: 140, visible: true, sortable: true },
             { key: 'taskHours', label: '任务工时', type: 'text', width: 100, visible: true, formatter: 'formatTaskHours' },
@@ -50,8 +50,8 @@ class TableColumnManager {
             { key: 'creativeStrategyTag', label: '创意策略标签', type: 'text', width: 150, visible: true },
             { key: 'requirementNote', label: '需求备注', type: 'text', width: 150, visible: true },
             { key: 'referenceImages', label: '参考图', type: 'links', width: 120, visible: true, formatter: 'formatReferenceImages', cssClass: 'reference-images-cell' },
-            { key: 'regenerationSuggestion', label: '重新生成建议', type: 'text', width: 150, visible: true },
-            { key: 'operations', label: '操作', type: 'operations', width: 180, visible: true, fixed: true }
+            { key: 'regenerationSuggestion', label: '重新生成建议', type: 'text', width: 160, visible: true, cssClass: 'regeneration-suggestion-cell' },
+            { key: 'operations', label: '操作', type: 'operations', width: 248, visible: true, fixed: true, cssClass: 'col-operations' }
         ];
     }
     
@@ -285,12 +285,12 @@ const mockData = [
         updateTime: '2024-01-16 15:30:00',
         generationId: 'GEN006',
         generationType: '单品单图',
-        channel: 'VTD',
+        channel: '抖音',
         materialSource: 'AI生成',
         templateCategory: '原生图',
         productQuantity: 1,
         materialQuantity: 2,
-        materialSize: '快手PD；网易PD；百度PD视频',
+        materialSize: '1280x720',
         productId: 'PROD009/国C级',
         productLevel: '三级',
         productCategory: '配饰',
@@ -341,6 +341,93 @@ const mockData = [
             searchKeywords: '小辣椒',
             referenceLink: 'www.xiaohongshu.com'
         }
+    },
+    {
+        id: '7CrNkAAL',
+        createTime: '2024-01-16 11:00:00',
+        expectedTime: '2024-01-19 18:00:00',
+        expectedHours: 72,
+        taskHours: 40,
+        submitter: '139****5678',
+        designer: 'OA001',
+        status: 'generating',
+        updateTime: '2024-01-16 11:30:00',
+        generationId: 'GEN008',
+        generationType: '单品单图',
+        channel: '抖音',
+        materialSource: 'AI生成',
+        templateCategory: '原生图',
+        productQuantity: 1,
+        materialQuantity: 2,
+        materialSize: '1080x1920',
+        productId: 'PROD010/国A级',
+        productLevel: '一级',
+        productCategory: '服装',
+        anxinInfo: generateRandomAnxinInfo(),
+        priceInfo: '市价299|唯品199|到手159|直降40|折扣0.8|',
+        applicationScenario: '日常',
+        creativeStrategyTag: '抖音图文原生实拍风',
+        requirementNote: 'Skill批量生产测试任务',
+        referenceImages: ['https://example.com/ref11.jpg'],
+        regenerationSuggestion: ''
+    },
+    {
+        id: '7CrNkAAM',
+        createTime: '2024-01-17 09:30:00',
+        expectedTime: '2024-01-20 18:00:00',
+        expectedHours: 72,
+        taskHours: 30,
+        submitter: '136****3456',
+        designer: 'OA003',
+        status: 'generating',
+        updateTime: '2024-01-17 10:00:00',
+        generationId: 'GEN009',
+        generationType: '单品单视频',
+        channel: '抖音',
+        materialSource: '人工生产',
+        templateCategory: '实拍视频',
+        productQuantity: 1,
+        materialQuantity: 1,
+        materialSize: '1280x720',
+        productId: 'PROD011/国A级',
+        productLevel: '一级',
+        productCategory: '美妆',
+        anxinInfo: generateRandomAnxinInfo(),
+        priceInfo: '市价259|唯品179|到手139|直降40|折扣0.78|',
+        applicationScenario: '促销',
+        creativeStrategyTag: '实拍种草',
+        requirementNote: '人工实拍单视频，突出产品使用场景',
+        referenceImages: ['https://example.com/ref12.jpg'],
+        regenerationSuggestion: ''
+    },
+    {
+        id: '7CrNkAAN',
+        createTime: '2024-01-17 11:15:00',
+        expectedTime: '2024-01-21 18:00:00',
+        expectedHours: 96,
+        taskHours: 25,
+        submitter: '137****9012',
+        designer: 'OA001',
+        status: 'generating',
+        updateTime: '2024-01-17 11:45:00',
+        generationId: 'GEN010',
+        generationType: '单品单视频',
+        channel: '小红书',
+        materialSource: '人工生产',
+        templateCategory: '实拍视频',
+        productQuantity: 1,
+        materialQuantity: 1,
+        materialSize: '1080x1920',
+        productId: 'PROD012/国B级',
+        productLevel: '二级',
+        productCategory: '家居',
+        anxinInfo: generateRandomAnxinInfo(),
+        priceInfo: '市价399|唯品269|到手219|直降50|折扣0.81|',
+        applicationScenario: '日常',
+        creativeStrategyTag: '实拍测评',
+        requirementNote: '小红书风格实拍短视频',
+        referenceImages: ['https://example.com/ref13.jpg', 'https://example.com/ref14.jpg'],
+        regenerationSuggestion: ''
     }
 ];
 
@@ -3179,13 +3266,37 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('可见列:', columnManager.visibleColumns);
     
     renderTable();
+    if (typeof initSkillModule === 'function') initSkillModule();
 });
+
+// 渲染 colgroup 固定列宽，避免选中行/批量操作栏触发列宽塌陷重叠
+function renderTableColgroup() {
+    const table = document.getElementById('taskTable');
+    if (!table) return;
+
+    let colgroup = table.querySelector('colgroup');
+    if (!colgroup) {
+        colgroup = document.createElement('colgroup');
+        const thead = table.querySelector('thead');
+        table.insertBefore(colgroup, thead);
+    }
+
+    colgroup.innerHTML = '';
+    columnManager.getVisibleColumns().forEach(column => {
+        const col = document.createElement('col');
+        col.style.width = `${column.width}px`;
+        if (column.cssClass) col.className = column.cssClass;
+        colgroup.appendChild(col);
+    });
+}
 
 // 渲染表格
 function renderTable() {
     const thead = document.querySelector('#taskTable thead tr');
     const tbody = document.getElementById('taskTableBody');
     
+    renderTableColgroup();
+
     // 清空表格
     thead.innerHTML = '';
     tbody.innerHTML = '';
@@ -3291,8 +3402,12 @@ function renderTableHeader(thead) {
             th.className = column.cssClass;
         }
         
-        // 设置CSS变量用于宽度
         th.style.setProperty('--column-width', `${column.width}px`);
+        if (column.key === 'operations' || column.key === 'regenerationSuggestion') {
+            th.style.width = `${column.width}px`;
+            th.style.maxWidth = `${column.width}px`;
+            th.style.minWidth = `${column.width}px`;
+        }
         
         thead.appendChild(th);
     });
@@ -3354,6 +3469,12 @@ function renderTableRow(row, task) {
             case 'referenceImages':
                 content = formatReferenceImages(task.referenceImages);
                 break;
+            case 'regenerationSuggestion': {
+                const suggestion = task.regenerationSuggestion || '-';
+                const safeTitle = String(suggestion).replace(/"/g, '&quot;');
+                content = `<span class="regeneration-suggestion-text" title="${safeTitle}">${suggestion}</span>`;
+                break;
+            }
             case 'operations':
                 content = `<div class="operation-buttons">${getOperationButtonsHTML(task)}</div>`;
                 break;
@@ -3368,8 +3489,13 @@ function renderTableRow(row, task) {
             td.className = column.cssClass;
         }
         
-        // 设置CSS变量用于宽度
+        // 设置列宽
         td.style.setProperty('--column-width', `${column.width}px`);
+        if (column.key === 'operations' || column.key === 'regenerationSuggestion') {
+            td.style.width = `${column.width}px`;
+            td.style.maxWidth = `${column.width}px`;
+            td.style.minWidth = `${column.width}px`;
+        }
         
         row.appendChild(td);
     });
@@ -3391,6 +3517,7 @@ function toggleTaskSelection(taskId, checkbox) {
 
     updateBulkActions();
     updateSelectAllCheckbox();
+    if (typeof updateSkillToolbarUI === 'function') updateSkillToolbarUI();
 }
 
 // 全选/取消全选
@@ -3413,6 +3540,7 @@ function toggleSelectAll() {
     }
 
     updateBulkActions();
+    if (typeof updateSkillToolbarUI === 'function') updateSkillToolbarUI();
 }
 
 // 更新全选复选框状态
@@ -3442,17 +3570,13 @@ function updateBulkActions() {
     } else {
         bulkActions.style.display = 'none';
     }
+
+    if (typeof updateSkillToolbarUI === 'function') updateSkillToolbarUI();
 }
 
 // 获取操作按钮HTML
 function getOperationButtonsHTML(task) {
     let buttonsHTML = '';
-    let materialsHTML = '';
-    
-    // 如果有上传的素材，显示素材列表
-    if (task.uploadedMaterials && task.uploadedMaterials.length > 0) {
-        materialsHTML = `<div class="uploaded-materials">${formatUploadedMaterials(task.uploadedMaterials)}</div>`;
-    }
     
     // AIGC设计师 - 无操作按钮显示
     if (task.designer === 'AIGC') {
@@ -3461,50 +3585,48 @@ function getOperationButtonsHTML(task) {
     // 待分配设计师状态 - 显示分配设计师和导出任务
     else if (task.status === 'unassigned') {
         buttonsHTML = `
-            <button class="btn btn-primary" onclick="assignDesigner(${task.id})">分配设计师</button>
-            <button class="btn btn-success" onclick="exportSingleTask(${task.id})">导出任务</button>
+            <button class="btn btn-primary" onclick="assignDesigner('${task.id}')">分配设计师</button>
+            <button class="btn btn-success" onclick="exportSingleTask('${task.id}')">导出任务</button>
         `;
     }
-    // ued设计师且空值 - 只有关闭按钮
-    else if (task.designer === 'ued' && task.status === 'pending') {
-        buttonsHTML = '<button class="btn btn-danger" onclick="closeTask(' + task.id + ')">关闭</button>';
+    // ued设计师
+    else if (task.designer === 'ued') {
+        if (task.status === 'pending') {
+            buttonsHTML = `<button class="btn btn-danger" onclick="closeTask('${task.id}')">关闭</button>`;
+        } else if (task.status === 'generating' || task.status === 're-generating') {
+            buttonsHTML = `
+                <button class="btn btn-success" onclick="openUploadModal('${task.id}')">上传素材</button>
+                <button class="btn btn-danger" onclick="closeTask('${task.id}')">关闭</button>
+            `;
+        }
     }
     // OA设计师 - 根据状态显示不同按钮
     else if (task.designer && task.designer.startsWith('OA')) {
-        // 遵循有权限的流程，所有OA设计师都可以操作
         if (task.status === 'pending' || task.status === 're-pending') {
             buttonsHTML = `
-                <button class="btn btn-primary" onclick="startProduction(${task.id})">开始生产</button>
-                <button class="btn btn-danger" onclick="closeTask(${task.id})">关闭</button>
+                <button class="btn btn-primary" onclick="startProduction('${task.id}')">开始生产</button>
+                <button class="btn btn-danger" onclick="closeTask('${task.id}')">关闭</button>
             `;
         }
         else if (task.status === 'generating' || task.status === 're-generating') {
-            // 针对单品单图，显示上传素材、图创作、关闭三个按钮
-            if (task.generationType === '单品单图') {
-                buttonsHTML = `
-                    <button class="btn btn-success" onclick="openUploadModal(${task.id})">上传素材</button>
-                    <button class="btn btn-secondary" onclick="openImageCreation(${task.id})">图创作</button>
-                    <button class="btn btn-danger" onclick="closeTask(${task.id})">关闭</button>
-                `;
-            } else {
-                // 其他类型只显示上传素材和关闭按钮
-                buttonsHTML = `
-                    <button class="btn btn-success" onclick="openUploadModal(${task.id})">上传素材</button>
-                    <button class="btn btn-danger" onclick="closeTask(${task.id})">关闭</button>
-                `;
-            }
+            buttonsHTML = `
+                <button class="btn btn-success" onclick="openUploadModal('${task.id}')">上传素材</button>
+                <button class="btn btn-danger" onclick="closeTask('${task.id}')">关闭</button>
+            `;
         }
         else if (task.status === 'uploaded') {
-            buttonsHTML = '<button class="btn btn-primary" onclick="syncToWeimiao(' + task.id + ')">同步唯妙</button>';
+            buttonsHTML = `<button class="btn btn-primary" onclick="syncToWeimiao('${task.id}')">同步唯妙</button>`;
         }
     }
-    // 其他情况 - 无操作按钮
     else {
-        // 移除无操作选项，遵循有权限的流程
         buttonsHTML = '';
     }
-    
-    return buttonsHTML + materialsHTML;
+
+    const skillInlineHTML = (typeof getSkillInlineActionHTML === 'function')
+        ? getSkillInlineActionHTML(task)
+        : '';
+
+    return `<div class="operation-buttons-main">${buttonsHTML}${skillInlineHTML}</div>`;
 }
 
 // 获取子任务操作按钮HTML
@@ -3519,7 +3641,6 @@ function getSubTaskOperationButtonsHTML(subTask, parentTaskId, subIndex) {
         `;
     }
     else if (subTask.status === 'generating' || subTask.status === 're-generating') {
-        // 子任务只显示上传素材按钮（子任务不支持图创作）
         buttonsHTML = '<button class="btn btn-success" onclick="openSubTaskUploadModal(\'' + parentTaskId + '\', ' + subIndex + ')">上传素材</button>';
     }
     else if (subTask.status === 'uploaded') {
@@ -3942,7 +4063,7 @@ function exportTasks() {
 function startProduction(taskId) {
     const task = taskData.find(t => t.id === taskId);
     if (task) {
-        // 针对单品单图，开始生产后状态变为'generating'，显示上传素材、图创作、关闭按钮
+        // 开始生产后状态变为 generating
         if (task.generationType === '单品单图') {
             task.status = 'generating';
             task.updateTime = new Date().toLocaleString('zh-CN');
@@ -3969,29 +4090,61 @@ function closeTask(taskId) {
     }
 }
 
-// 打开图创作
-function openImageCreation(taskId) {
-    const task = taskData.find(t => t.id === taskId);
-    if (task) {
-        // 模拟跳转到图创作平台
-        alert(`跳转到图创作平台，生成ID: ${task.generationId}`);
-        // 这里可以添加实际的跳转逻辑
+// 切换上传弹窗视图：dropzone=文件上传区，tagging=图片打标区
+function setUploadModalView(mode, options = {}) {
+    const { skillMode = false } = options;
+    const uploadModal = document.getElementById('uploadModal');
+    const uploadArea = document.getElementById('uploadArea');
+    const configContainer = document.getElementById('materialsConfigContainer');
+    const continueSection = document.getElementById('continueUploadSection');
+    const titleEl = uploadModal?.querySelector('.modal-header h3');
+
+    const isTagging = mode === 'tagging';
+
+    if (uploadArea) uploadArea.style.display = isTagging ? 'none' : 'block';
+    if (configContainer) configContainer.style.display = isTagging ? 'flex' : 'none';
+    if (continueSection) {
+        continueSection.style.display = isTagging && !skillMode ? 'block' : 'none';
+    }
+    if (titleEl) titleEl.textContent = isTagging ? '图片打标' : '上传素材';
+    if (uploadModal) {
+        if (skillMode) uploadModal.dataset.skillMode = 'true';
+        else delete uploadModal.dataset.skillMode;
     }
 }
 
-// 打开上传素材弹窗
+// 打开上传素材弹窗（与 Skill 结果弱耦合：有图片则预填打标，否则正常上传）
 function openUploadModal(taskId) {
+    const task = taskData.find(t => t.id === taskId);
+
+    if (typeof isSkillResultsLocked === 'function' && isSkillResultsLocked(task)) {
+        showNotification('该任务已上传唯妙，请通过重新上传流程处理新素材', 'info');
+        return;
+    }
+
+    const skillImageMaterials = (typeof getConfirmedSkillMaterials === 'function' && task)
+        ? getConfirmedSkillMaterials(task)
+        : [];
+
+    uploadedMaterials = skillImageMaterials.length > 0 ? [...skillImageMaterials] : [];
+
     window.currentTaskId = taskId;
-    uploadedMaterials = [];
-    renderMaterialsList();
+    const uploadModal = document.getElementById('uploadModal');
+    uploadModal.dataset.taskId = taskId;
+    delete uploadModal.dataset.parentTaskId;
+    delete uploadModal.dataset.subIndex;
+    delete uploadModal.dataset.skillMode;
+
     setupUploadZone();
-    
-    // 重置上传模态框状态
-    document.getElementById('uploadArea').style.display = 'block';
-    document.getElementById('materialsConfigContainer').style.display = 'none';
-    document.getElementById('continueUploadSection').style.display = 'none';
-    
-    document.getElementById('uploadModal').style.display = 'block';
+    renderMaterialsList();
+
+    if (uploadedMaterials.length > 0) {
+        setUploadModalView('tagging', { skillMode: false });
+    } else {
+        setUploadModalView('dropzone');
+    }
+
+    uploadModal.style.display = 'block';
 }
 
 // 打开批量解析弹窗
@@ -4227,9 +4380,12 @@ document.addEventListener('click', function(event) {
 
 // 显示上传区域
 function showUploadArea() {
-    document.getElementById('materialsConfigContainer').style.display = 'none';
-    document.getElementById('continueUploadSection').style.display = 'none';
-    document.getElementById('uploadArea').style.display = 'block';
+    const uploadModal = document.getElementById('uploadModal');
+    if (uploadModal?.dataset.skillMode === 'true') {
+        showNotification('Skill 任务请使用结果图中的素材进行打标上传', 'info');
+        return;
+    }
+    setUploadModalView('dropzone');
 }
 
 // 设置上传区域
@@ -4291,11 +4447,9 @@ function addMaterial(file) {
     uploadedMaterials.push(material);
     renderMaterialsList();
     
-    // 如果是第一个素材，切换到配置模式
+    // 如果是第一个素材，切换到打标模式
     if (uploadedMaterials.length === 1) {
-        document.getElementById('uploadArea').style.display = 'none';
-        document.getElementById('materialsConfigContainer').style.display = 'flex';
-        document.getElementById('continueUploadSection').style.display = 'block';
+        setUploadModalView('tagging', { skillMode: false });
     }
 }
 
@@ -4331,19 +4485,30 @@ function createMaterialElement(material, index) {
     const div = document.createElement('div');
     div.className = 'material-item';
     div.dataset.materialId = material.id;
+    const mid = JSON.stringify(String(material.id));
+    const textTags = material.textTags || '';
+    const parsedTags = material.parsedTags || [];
+    const materialName = material.name || '';
+    const materialType = material.type || 'image/jpeg';
     
     // 生成预览
-    const preview = material.type.startsWith('image/') 
-        ? `<img src="${URL.createObjectURL(material.file)}" alt="预览">`
-        : `<video src="${URL.createObjectURL(material.file)}" controls></video>`;
-    
-    // 获取文件信息
-    const fileInfo = getFileInfo(material.file);
+    let preview;
+    if (material.fromSkill && material.preview) {
+        preview = `<img src="${material.preview}" alt="预览">`;
+    } else if (materialType.startsWith('image/')) {
+        preview = `<img src="${URL.createObjectURL(material.file)}" alt="预览">`;
+    } else {
+        preview = `<video src="${URL.createObjectURL(material.file)}" controls></video>`;
+    }
+
+    const fileInfo = material.fromSkill
+        ? { dimensions: '来自Skill预选', ratio: '-', size: '-' }
+        : getFileInfo(material.file);
     
     div.innerHTML = `
         <div class="material-header">
             <span class="material-title">素材${index + 1}</span>
-            <span class="material-delete" onclick="deleteMaterial(${material.id})">删除</span>
+            <span class="material-delete" onclick="deleteMaterial('${material.id}')">删除</span>
         </div>
         <div class="material-content">
             <div class="material-preview">
@@ -4354,96 +4519,96 @@ function createMaterialElement(material, index) {
                     <span>尺寸: ${fileInfo.dimensions}</span>
                     <span>比例: ${fileInfo.ratio}</span>
                     <span>大小: ${fileInfo.size}</span>
-                    <span>格式: ${material.type}</span>
+                    <span>格式: ${materialType}</span>
                 </div>
                 <div class="material-name">
                     <label>素材名称:</label>
-                    <input type="text" value="${material.name}" onchange="updateMaterialName(${material.id}, this.value)" maxlength="200">
-                    <div class="char-count">${material.name.length}/200</div>
+                    <input type="text" value="${materialName}" onchange="updateMaterialName(${mid}, this.value)" maxlength="200">
+                    <div class="char-count">${materialName.length}/200</div>
                 </div>
                 <div class="material-tags">
                     <div class="tag-section">
                         <label>选择标签:</label>
                         <div class="tag-buttons">
-                            <button class="tag-button" onclick="toggleTag(${material.id}, '彩色')">彩色</button>
-                            <button class="tag-button" onclick="toggleTag(${material.id}, '灰色')">灰色</button>
-                            <button class="tag-button" onclick="toggleTag(${material.id}, '黑色')">黑色</button>
-                            <span class="clear-tags" onclick="clearTags(${material.id})">清除</span>
+                            <button class="tag-button" onclick="toggleTag(${mid}, '彩色')">彩色</button>
+                            <button class="tag-button" onclick="toggleTag(${mid}, '灰色')">灰色</button>
+                            <button class="tag-button" onclick="toggleTag(${mid}, '黑色')">黑色</button>
+                            <span class="clear-tags" onclick="clearTags(${mid})">清除</span>
                         </div>
                     </div>
                     <div class="tag-section">
                         <label>价格标签样式:</label>
                         <div class="tag-buttons">
-                            <button class="tag-button" onclick="toggleTag(${material.id}, '下滑桿式')">下滑桿式</button>
-                            <button class="tag-button" onclick="toggleTag(${material.id}, '标签样式')">标签样式</button>
-                            <button class="tag-button" onclick="toggleTag(${material.id}, '按钮')">按钮</button>
-                            <button class="tag-button" onclick="toggleTag(${material.id}, '优惠券')">优惠券</button>
-                            <button class="tag-button" onclick="toggleTag(${material.id}, '卡片')">卡片</button>
-                            <button class="tag-button" onclick="toggleTag(${material.id}, '无样式')">无样式</button>
+                            <button class="tag-button" onclick="toggleTag(${mid}, '下滑桿式')">下滑桿式</button>
+                            <button class="tag-button" onclick="toggleTag(${mid}, '标签样式')">标签样式</button>
+                            <button class="tag-button" onclick="toggleTag(${mid}, '按钮')">按钮</button>
+                            <button class="tag-button" onclick="toggleTag(${mid}, '优惠券')">优惠券</button>
+                            <button class="tag-button" onclick="toggleTag(${mid}, '卡片')">卡片</button>
+                            <button class="tag-button" onclick="toggleTag(${mid}, '无样式')">无样式</button>
                         </div>
                     </div>
                     <div class="tag-section">
                         <label>设计师:</label>
                         <div class="tag-buttons">
-                            <button class="tag-button" onclick="toggleTag(${material.id}, '黄盈盈')">黄盈盈</button>
-                            <button class="tag-button" onclick="toggleTag(${material.id}, '邹文华')">邹文华</button>
-                            <button class="tag-button" onclick="toggleTag(${material.id}, '姚琳漫')">姚琳漫</button>
-                            <button class="tag-button" onclick="toggleTag(${material.id}, '胡员杰')">胡员杰</button>
-                            <button class="tag-button" onclick="toggleTag(${material.id}, '黄嘉怡')">黄嘉怡</button>
-                            <button class="tag-button" onclick="toggleTag(${material.id}, '代理')">代理</button>
-                            <button class="tag-button" onclick="toggleTag(${material.id}, 'AIGC')">AIGC</button>
-                            <button class="tag-button" onclick="toggleTag(${material.id}, '胡俊')">胡俊</button>
-                            <button class="tag-button" onclick="toggleTag(${material.id}, '李慧丹')">李慧丹</button>
-                            <button class="tag-button" onclick="toggleTag(${material.id}, '宁翠莲')">宁翠莲</button>
-                            <button class="tag-button" onclick="toggleTag(${material.id}, '黄健明')">黄健明</button>
-                            <button class="tag-button" onclick="toggleTag(${material.id}, '谢嘉诚')">谢嘉诚</button>
-                            <button class="tag-button" onclick="toggleTag(${material.id}, '孔成')">孔成</button>
-                            <button class="tag-button" onclick="toggleTag(${material.id}, '林吴悠')">林吴悠</button>
-                            <button class="tag-button" onclick="toggleTag(${material.id}, '陆舒燕')">陆舒燕</button>
-                            <button class="tag-button" onclick="toggleTag(${material.id}, '张明月')">张明月</button>
-                            <button class="tag-button" onclick="toggleTag(${material.id}, '余巧弹')">余巧弹</button>
-                            <button class="tag-button" onclick="toggleTag(${material.id}, '黄雅丹')">黄雅丹</button>
-                            <button class="tag-button" onclick="toggleTag(${material.id}, '欧靖丹')">欧靖丹</button>
+                            <button class="tag-button" onclick="toggleTag(${mid}, '黄盈盈')">黄盈盈</button>
+                            <button class="tag-button" onclick="toggleTag(${mid}, '邹文华')">邹文华</button>
+                            <button class="tag-button" onclick="toggleTag(${mid}, '姚琳漫')">姚琳漫</button>
+                            <button class="tag-button" onclick="toggleTag(${mid}, '胡员杰')">胡员杰</button>
+                            <button class="tag-button" onclick="toggleTag(${mid}, '黄嘉怡')">黄嘉怡</button>
+                            <button class="tag-button" onclick="toggleTag(${mid}, '代理')">代理</button>
+                            <button class="tag-button" onclick="toggleTag(${mid}, 'AIGC')">AIGC</button>
+                            <button class="tag-button" onclick="toggleTag(${mid}, '胡俊')">胡俊</button>
+                            <button class="tag-button" onclick="toggleTag(${mid}, '李慧丹')">李慧丹</button>
+                            <button class="tag-button" onclick="toggleTag(${mid}, '宁翠莲')">宁翠莲</button>
+                            <button class="tag-button" onclick="toggleTag(${mid}, '黄健明')">黄健明</button>
+                            <button class="tag-button" onclick="toggleTag(${mid}, '谢嘉诚')">谢嘉诚</button>
+                            <button class="tag-button" onclick="toggleTag(${mid}, '孔成')">孔成</button>
+                            <button class="tag-button" onclick="toggleTag(${mid}, '林吴悠')">林吴悠</button>
+                            <button class="tag-button" onclick="toggleTag(${mid}, '陆舒燕')">陆舒燕</button>
+                            <button class="tag-button" onclick="toggleTag(${mid}, '张明月')">张明月</button>
+                            <button class="tag-button" onclick="toggleTag(${mid}, '余巧弹')">余巧弹</button>
+                            <button class="tag-button" onclick="toggleTag(${mid}, '黄雅丹')">黄雅丹</button>
+                            <button class="tag-button" onclick="toggleTag(${mid}, '欧靖丹')">欧靖丹</button>
                         </div>
                     </div>
                 </div>
                 <div class="product-association">
                     <label>关联商品:</label>
                     <div class="product-selector">
-                        <input type="checkbox" class="product-checkbox" onchange="toggleProductSelector(${material.id})">
+                        <input type="checkbox" class="product-checkbox" onchange="toggleProductSelector(${mid})">
                         <span>选择关联商品</span>
                     </div>
                     <div class="product-list" id="productList_${material.id}" style="display: none;">
                         <div class="product-item">
-                            <input type="checkbox" onchange="toggleProduct(${material.id}, 'PROD001')">
+                            <input type="checkbox" onchange="toggleProduct(${mid}, 'PROD001')">
                             <span>时尚休闲T恤 - ¥89</span>
                         </div>
                         <div class="product-item">
-                            <input type="checkbox" onchange="toggleProduct(${material.id}, 'PROD002')">
+                            <input type="checkbox" onchange="toggleProduct(${mid}, 'PROD002')">
                             <span>经典牛仔裤 - ¥199</span>
                         </div>
                         <div class="product-item">
-                            <input type="checkbox" onchange="toggleProduct(${material.id}, 'PROD003')">
+                            <input type="checkbox" onchange="toggleProduct(${mid}, 'PROD003')">
                             <span>运动鞋 - ¥299</span>
                         </div>
                         <div class="product-item">
-                            <input type="checkbox" onchange="toggleProduct(${material.id}, 'PROD004')">
+                            <input type="checkbox" onchange="toggleProduct(${mid}, 'PROD004')">
                             <span>休闲外套 - ¥399</span>
                         </div>
                         <div class="product-item">
-                            <input type="checkbox" onchange="toggleProduct(${material.id}, 'PROD005')">
+                            <input type="checkbox" onchange="toggleProduct(${mid}, 'PROD005')">
                             <span>时尚包包 - ¥159</span>
                         </div>
                         <div class="product-item">
-                            <input type="checkbox" onchange="toggleProduct(${material.id}, 'PROD006')">
+                            <input type="checkbox" onchange="toggleProduct(${mid}, 'PROD006')">
                             <span>太阳镜 - ¥89</span>
                         </div>
                         <div class="product-item">
-                            <input type="checkbox" onchange="toggleProduct(${material.id}, 'PROD007')">
+                            <input type="checkbox" onchange="toggleProduct(${mid}, 'PROD007')">
                             <span>手表 - ¥599</span>
                         </div>
                         <div class="product-item">
-                            <input type="checkbox" onchange="toggleProduct(${material.id}, 'PROD008')">
+                            <input type="checkbox" onchange="toggleProduct(${mid}, 'PROD008')">
                             <span>香水 - ¥299</span>
                         </div>
                     </div>
@@ -4451,12 +4616,12 @@ function createMaterialElement(material, index) {
                 <div class="text-tags-section">
                     <div class="text-tags-input">
                         <label>文本标签 解析:</label>
-                        <textarea placeholder="输入素材的文本标签,标签之间以"-"分隔,后系统将自动读取所含标签。最多输入200个字符" onchange="updateTextTags(${material.id}, this.value)" maxlength="200">${material.textTags}</textarea>
-                        <div class="char-count">${material.textTags.length}/200</div>
+                        <textarea placeholder="输入素材的文本标签,标签之间以"-"分隔,后系统将自动读取所含标签。最多输入200个字符" onchange="updateTextTags(${mid}, this.value)" maxlength="200">${textTags}</textarea>
+                        <div class="char-count">${textTags.length}/200</div>
                     </div>
                     <div class="text-tags-parse">
-                        <button class="parse-button" onclick="parseTextTags(${material.id})">解析</button>
-                        <div class="parse-result">${material.parsedTags.join(', ')}</div>
+                        <button class="parse-button" onclick="parseTextTags(${mid})">解析</button>
+                        <div class="parse-result">${parsedTags.join(', ')}</div>
                     </div>
                 </div>
             </div>
@@ -4488,11 +4653,15 @@ function deleteMaterial(materialId) {
     uploadedMaterials = uploadedMaterials.filter(m => m.id !== materialId);
     renderMaterialsList();
     
-    // 如果没有素材了，显示上传区域
     if (uploadedMaterials.length === 0) {
-        document.getElementById('uploadArea').style.display = 'block';
-        document.getElementById('materialsConfigContainer').style.display = 'none';
-        document.getElementById('continueUploadSection').style.display = 'none';
+        const uploadModal = document.getElementById('uploadModal');
+        const skillMode = uploadModal?.dataset.skillMode === 'true';
+        if (skillMode) {
+            showNotification('请至少在 Skill 结果中保留一张素材', 'warning');
+            closeModal('uploadModal');
+        } else {
+            setUploadModalView('dropzone');
+        }
     } else {
         // 设置第一个素材为活跃状态
         setActiveMaterial(0);
@@ -4639,7 +4808,8 @@ function updateProductItems(materialId) {
 
 // 确认上传
 function confirmUpload() {
-    const taskId = parseInt(document.getElementById('uploadModal').dataset.taskId);
+    const uploadModal = document.getElementById('uploadModal');
+    const taskId = window.currentTaskId || uploadModal.dataset.taskId;
     const task = taskData.find(t => t.id === taskId);
     
     if (uploadedMaterials.length === 0) {
@@ -4647,7 +4817,8 @@ function confirmUpload() {
         return;
     }
     
-    if (task && uploadedMaterials.length !== task.materialQuantity) {
+    const isSkillUpload = uploadedMaterials.length > 0 && uploadedMaterials.every(m => m.fromSkill);
+    if (task && !isSkillUpload && uploadedMaterials.length !== task.materialQuantity) {
         alert(`上传素材数量与任务素材数量不匹配，需要${task.materialQuantity}个素材`);
         return;
     }
@@ -4656,6 +4827,10 @@ function confirmUpload() {
     if (task) {
         task.status = 'uploaded';
         task.updateTime = new Date().toLocaleString('zh-CN');
+
+        if (typeof lockSkillResults === 'function') {
+            lockSkillResults(task);
+        }
         
         // 模拟生成素材名称（实际项目中应该从上传接口获取）
         task.uploadedMaterials = uploadedMaterials.map((material, index) => {
@@ -4674,7 +4849,7 @@ function confirmUpload() {
 
     closeModal('uploadModal');
     renderTable();
-    alert('素材上传成功');
+    alert('素材已上传唯妙');
 }
 
 // 同步到唯妙
@@ -4713,11 +4888,12 @@ function closeModal(modalId) {
     document.getElementById(modalId).style.display = 'none';
     if (modalId === 'uploadModal') {
         document.getElementById('materialFiles').value = '';
-        document.getElementById('uploadPreview').innerHTML = '';
-        // 重置上传模态框状态
-        document.getElementById('uploadArea').style.display = 'block';
-        document.getElementById('materialsConfigContainer').style.display = 'none';
-        document.getElementById('continueUploadSection').style.display = 'none';
+        const uploadPreview = document.getElementById('uploadPreview');
+        if (uploadPreview) uploadPreview.innerHTML = '';
+        const uploadModal = document.getElementById('uploadModal');
+        delete uploadModal.dataset.skillMode;
+        setUploadModalView('dropzone');
+        uploadedMaterials = [];
     } else if (modalId === 'assignModal') {
         // 重置分配设计师弹窗
         const assignmentEntries = document.getElementById('assignmentEntries');
@@ -4814,13 +4990,6 @@ function closeSubTask(parentTaskId, subIndex) {
         task.updateTime = new Date().toLocaleString('zh-CN');
         renderTable();
         alert('子任务已关闭');
-    }
-}
-
-function openSubTaskImageCreation(parentTaskId, subIndex) {
-    const task = taskData.find(t => t.id === parentTaskId);
-    if (task && task.subTasks && task.subTasks[subIndex]) {
-        alert(`跳转到图创作平台，生成ID: ${task.generationId}，子任务索引: ${subIndex}`);
     }
 }
 

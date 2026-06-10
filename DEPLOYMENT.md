@@ -24,31 +24,30 @@ git branch -M main
 git push -u origin main
 ```
 
-## 步骤3: 启用GitHub Pages
+## 步骤3: 启用 GitHub Pages
 
-1. 在GitHub仓库页面，点击 "Settings" 标签
-2. 在左侧菜单中找到 "Pages"
-3. 在 "Source" 部分：
-   - 选择 "Deploy from a branch"
-   - Branch 选择 "main"
-   - Folder 选择 "/ (root)"
-4. 点击 "Save"
+仓库已配置 GitHub Actions 自动部署（`.github/workflows/deploy.yml`）。
 
-## 步骤4: 访问您的网站
+首次或迁移时，在 GitHub 仓库 **Settings → Pages → Build and deployment → Source** 选择 **GitHub Actions**。
 
-几分钟后，您的网站将在以下地址可用：
-`https://YOUR_USERNAME.github.io/taskmanage/`
+## 步骤4: 访问在线 Demo
+
+**https://xuyan14.github.io/taskmanage/**
+
+推送 `main` 分支后，Actions 自动部署，一般 1～2 分钟生效。
 
 ## 文件结构
 
 ```
 taskmanage/
-├── index.html          # 主页面
-├── styles.css          # 样式文件
-├── script.js           # JavaScript逻辑
-├── README.md           # 项目说明
-├── .gitignore          # Git忽略文件
-└── DEPLOYMENT.md       # 部署说明
+├── index.html              # 主页面
+├── styles.css              # 样式
+├── script.js               # 任务列表与上传逻辑
+├── skill-module.js         # Skill 批量生产模块
+├── assets/                 # 图片、故事版 Excel 等静态资源
+├── .github/workflows/      # GitHub Pages 部署
+├── README.md
+└── DEPLOYMENT.md
 ```
 
 ## 功能特性
