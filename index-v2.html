@@ -3,15 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>创意生产任务管理</title>
-    <link rel="stylesheet" href="styles.css?v=20260609v">
+    <title>创意生产平台 V2 · 对话式 Agent</title>
+    <link rel="stylesheet" href="styles.css?v=20260610v2i">
+    <link rel="stylesheet" href="styles-v2.css?v=20260610v2l">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 </head>
 <body>
     <div class="app-layout">
-    <header class="page-header" style="display:flex;align-items:center;justify-content:space-between;gap:16px;">
-        <h1 class="page-title">创意生产平台</h1>
-        <a href="index-v2.html" style="font-size:13px;color:#722ed1;text-decoration:none;white-space:nowrap;">体验 V2 对话式 Agent →</a>
+    <header class="page-header page-header-v2">
+        <div>
+            <h1 class="page-title">创意生产平台 <span class="v2-badge">V2</span></h1>
+            <p class="workbench-subtitle" style="margin:4px 0 0">对话式 Agent · 工作台大抽屉 · Valet 改图</p>
+        </div>
+        <a class="v1-link" href="index.html">← 返回 V1 版本</a>
     </header>
     <div class="container">
         <div class="table-page">
@@ -475,23 +479,98 @@
         </div>
     </div>
 
-    <!-- Skill 结果处理弹窗 -->
-    <div id="skillResultModal" class="modal">
-        <div class="modal-content skill-result-modal-content">
-            <div class="modal-header">
-                <h3 id="skillResultModalTitle">Skill 生成结果</h3>
-                <span class="close" onclick="closeModal('skillResultModal')">&times;</span>
-            </div>
-            <div class="modal-body">
-                <div class="skill-result-meta" id="skillResultMeta"></div>
-                <div class="skill-result-grid" id="skillResultGrid"></div>
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-secondary" onclick="closeModal('skillResultModal')">关闭</button>
+    <input type="file" id="skillLocalUploadInput" accept="image/*" style="display: none;">
+
+    <!-- V2 任务工作台大抽屉（含原「查看结果」） -->
+    <div id="workbenchDrawer" class="workbench-drawer" aria-hidden="true">
+        <div class="workbench-backdrop" onclick="closeWorkbench()"></div>
+        <div class="workbench-panel" role="dialog" aria-label="任务工作台">
+            <header class="workbench-header">
+                <div class="workbench-header-main">
+                    <h2 id="workbenchTitle">任务工作台</h2>
+                    <p class="workbench-subtitle" id="workbenchSubtitle"></p>
+                    <span id="workbenchSkillStatus" class="workbench-skill-status workbench-skill-status--none"></span>
+                </div>
+                <div class="workbench-header-actions">
+                    <button type="button" class="btn btn-sm btn-primary" id="workbenchConfirmDeliveryBtn" onclick="workbenchConfirmDelivery(window.currentWorkbenchTaskId)" disabled>确认交付</button>
+                    <button type="button" class="btn btn-sm btn-outline" onclick="closeWorkbench()" aria-label="关闭"><i class="fas fa-times"></i></button>
+                </div>
+            </header>
+            <div class="workbench-body">
+                <section class="workbench-center">
+                    <div class="workbench-canvas-wrap">
+                        <div class="workbench-canvas" id="workbenchCanvas"></div>
+                    </div>
+                    <div class="workbench-versions-bar" id="workbenchVersions"></div>
+                    <div class="workbench-manual-bar" id="workbenchManualBar"></div>
+                </section>
+                <aside class="workbench-chat-panel">
+                    <div class="workbench-chat-header">
+                        <span id="workbenchAgentFocus" class="workbench-agent-badge coach">任务教练</span>
+                    </div>
+                    <div class="workbench-chat-messages" id="workbenchChatMessages"></div>
+                    <div class="workbench-composer-wrap">
+                        <div class="workbench-composer" id="workbenchComposer">
+                            <div class="workbench-composer-body">
+                                <div id="workbenchActiveSkillBar" class="workbench-active-skill-bar" hidden>
+                                    <span class="workbench-skill-mention" id="workbenchActiveSkillLabel"></span>
+                                    <button type="button" class="workbench-active-skill-clear" onclick="clearWorkbenchActiveSkill()" title="取消 Skill 上下文" aria-label="取消 Skill 上下文">×</button>
+                                </div>
+                                <textarea id="workbenchChatInput" rows="3" placeholder="分配一个任务或提问任何问题" onkeydown="workbenchChatKeydown(event)"></textarea>
+                                <div class="workbench-composer-hint-row">
+                                    <p class="workbench-composer-hint">在任务进行中仍可输入新的任务描述，上一个任务完成后将自动发送执行，Ctrl + ↵ 键换行</p>
+                                    <button type="button" class="workbench-composer-expand" onclick="toggleWorkbenchComposerExpand()" title="展开输入框" aria-label="展开">
+                                        <i class="fas fa-up-right-and-down-left-from-center"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="workbench-composer-toolbar">
+                                <div class="workbench-composer-left">
+                                    <div class="workbench-skill-picker-anchor">
+                                        <button type="button" class="workbench-composer-icon-btn" id="workbenchSkillPickerBtn" onclick="toggleWorkbenchSkillPicker(event)" title="选择 Skill" aria-expanded="false" aria-haspopup="listbox">
+                                            <i class="fas fa-puzzle-piece"></i>
+                                        </button>
+                                        <div id="workbenchSkillPicker" class="workbench-skill-picker" role="listbox" aria-label="Skill 列表" hidden>
+                                            <div class="workbench-skill-picker-header">
+                                                <h4>Skills</h4>
+                                            </div>
+                                            <div class="workbench-skill-picker-search">
+                                                <i class="fas fa-search"></i>
+                                                <input type="search" id="workbenchSkillSearch" placeholder="搜索 Skill 名称、渠道…" oninput="onWorkbenchSkillSearch()" autocomplete="off">
+                                            </div>
+                                            <div class="workbench-skill-picker-categories" id="workbenchSkillCategories">
+                                                <button type="button" class="skill-cat-chip active" data-cat="all" onclick="setWorkbenchSkillCategory('all')">全部</button>
+                                                <button type="button" class="skill-cat-chip" data-cat="单品单图" onclick="setWorkbenchSkillCategory('单品单图')"><i class="fas fa-image"></i> 单品单图</button>
+                                                <button type="button" class="skill-cat-chip" data-cat="实拍视频" onclick="setWorkbenchSkillCategory('实拍视频')"><i class="fas fa-video"></i> 实拍视频</button>
+                                            </div>
+                                            <div class="workbench-skill-picker-list" id="workbenchSkillPickerList"></div>
+                                        </div>
+                                    </div>
+                                    <button type="button" class="workbench-composer-icon-btn" onclick="triggerWorkbenchFileUpload()" title="上传本地文件">
+                                        <i class="fas fa-paperclip"></i>
+                                    </button>
+                                </div>
+                                <div class="workbench-composer-right">
+                                    <div class="workbench-composer-spinner" id="workbenchComposerSpinner" style="display: none;" aria-hidden="true">
+                                        <svg class="workbench-spinner-ring" viewBox="0 0 24 24" width="22" height="22">
+                                            <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="40 20" />
+                                        </svg>
+                                    </div>
+                                    <button type="button" class="workbench-composer-stop" id="workbenchComposerStop" style="display: none;" onclick="stopWorkbenchProcessing()" title="停止当前任务" aria-label="停止">
+                                        <span class="workbench-stop-square"></span>
+                                    </button>
+                                    <button type="button" class="workbench-composer-send" id="workbenchComposerSend" onclick="sendWorkbenchMessage()" title="发送 (Enter)" aria-label="发送">
+                                        <i class="fas fa-arrow-up"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <input type="file" id="workbenchFileInput" accept="image/jpeg,image/png,image/webp" multiple style="display: none;" onchange="handleWorkbenchFileUpload(event)">
+                </aside>
             </div>
         </div>
     </div>
-    <input type="file" id="skillLocalUploadInput" accept="image/*" style="display: none;">
 
     <!-- 分配设计师弹窗 -->
     <div id="assignModal" class="modal">
@@ -702,7 +781,8 @@
         </div>
     </div>
 
-    <script src="skill-module.js?v=20260609v"></script>
-    <script src="script.js?v=20260609v"></script>
+    <script src="skill-module-v2.js?v=20260610v2l"></script>
+    <script src="script-v2.js?v=20260610v2i"></script>
+    <script src="workbench-v2.js?v=20260610v2l"></script>
 </body>
 </html>

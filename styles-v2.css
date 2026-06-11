@@ -1,0 +1,903 @@
+/* V2 任务工作台大抽屉 */
+
+.workbench-open {
+    overflow: hidden;
+}
+
+.workbench-drawer {
+    position: fixed;
+    inset: 0;
+    z-index: 2000;
+    pointer-events: none;
+    visibility: hidden;
+    transition: visibility 0.3s;
+}
+
+.workbench-drawer.open {
+    pointer-events: auto;
+    visibility: visible;
+}
+
+.workbench-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.45);
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.workbench-drawer.open .workbench-backdrop {
+    opacity: 1;
+}
+
+.workbench-panel {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: min(92vw, 1280px);
+    height: 100%;
+    background: var(--color-bg-1, #fff);
+    box-shadow: -8px 0 32px rgba(0, 0, 0, 0.12);
+    display: flex;
+    flex-direction: column;
+    transform: translateX(100%);
+    transition: transform 0.32s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.workbench-drawer.open .workbench-panel {
+    transform: translateX(0);
+}
+
+.workbench-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 20px;
+    border-bottom: 1px solid var(--color-border-2, #e5e6eb);
+    flex-shrink: 0;
+}
+
+.workbench-header-main h2 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.workbench-subtitle {
+    margin: 4px 0 0;
+    font-size: 12px;
+    color: var(--color-text-3, #86909c);
+}
+
+.workbench-header-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.workbench-body {
+    flex: 1;
+    display: grid;
+    /* A：画布约 45%，对话约 55% */
+    grid-template-columns: minmax(0, 45%) minmax(320px, 55%);
+    min-height: 0;
+    overflow: hidden;
+}
+
+.workbench-center {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    border-right: 1px solid var(--color-border-2, #e5e6eb);
+}
+
+.workbench-canvas-wrap {
+    flex: 1;
+    overflow-y: auto;
+    padding: 12px 16px;
+}
+
+/* C：固定缩略图尺寸，左对齐，不横向拉满 */
+.workbench-canvas {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, 168px);
+    justify-content: start;
+    align-content: start;
+    gap: 12px;
+}
+
+.workbench-asset-card {
+    position: relative;
+    width: 168px;
+    border: 2px solid var(--color-border-2, #e5e6eb);
+    border-radius: var(--border-radius-md, 8px);
+    overflow: hidden;
+    cursor: pointer;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    background: var(--color-bg-2, #f7f8fa);
+}
+
+.workbench-asset-card:hover {
+    border-color: rgb(var(--primary-6, 22, 93, 255));
+}
+
+.workbench-asset-card.selected {
+    border-color: rgb(var(--primary-6, 22, 93, 255));
+    box-shadow: 0 0 0 2px rgba(22, 93, 255, 0.2);
+}
+
+.workbench-asset-card.is-delivery {
+    border-color: var(--color-success, #00b42a);
+}
+
+.workbench-delivery-badge {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    z-index: 2;
+    font-size: 10px;
+    padding: 2px 6px;
+    background: var(--color-success, #00b42a);
+    color: #fff;
+    border-radius: 4px;
+}
+
+.workbench-asset-preview {
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.workbench-asset-preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.workbench-asset-label {
+    padding: 6px 8px;
+    font-size: 11px;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    border-top: 1px solid var(--color-border-2);
+}
+
+.workbench-versions-bar {
+    padding: 8px 12px;
+    border-top: 1px solid var(--color-border-2);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    min-height: 40px;
+}
+
+.workbench-versions-title {
+    font-size: 11px;
+    color: var(--color-text-3);
+    margin-right: 4px;
+}
+
+.workbench-versions-hint {
+    font-size: 11px;
+    color: var(--color-text-3);
+    margin: 0;
+}
+
+.workbench-version-chip {
+    border: 1px solid var(--color-border-2);
+    background: #fff;
+    border-radius: 12px;
+    padding: 2px 10px;
+    font-size: 11px;
+    cursor: pointer;
+}
+
+.workbench-version-chip.active {
+    background: rgb(var(--primary-6, 22, 93, 255));
+    color: #fff;
+    border-color: transparent;
+}
+
+.workbench-manual-bar {
+    padding: 8px 12px;
+    border-top: 1px solid var(--color-border-2);
+    background: var(--color-bg-2, #f7f8fa);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-items: center;
+    min-height: 44px;
+    font-size: 12px;
+}
+
+.workbench-chat-panel {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    height: 100%;
+    overflow: hidden;
+    background: var(--color-bg-2, #f7f8fa);
+}
+
+.workbench-chat-header {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--color-border-2);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+}
+
+.workbench-agent-badge {
+    font-size: 12px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 4px;
+}
+
+.workbench-agent-badge.coach {
+    background: #e8f3ff;
+    color: #165dff;
+}
+
+.workbench-agent-badge.copilot {
+    background: #e8ffea;
+    color: #00b42a;
+}
+
+.workbench-chat-messages {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.workbench-msg {
+    max-width: 95%;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.workbench-msg-user {
+    align-self: flex-end;
+}
+
+.workbench-msg-user .workbench-msg-body {
+    background: rgb(var(--primary-6, 22, 93, 255));
+    color: #fff;
+    padding: 8px 12px;
+    border-radius: 12px 12px 4px 12px;
+}
+
+.workbench-msg-assistant {
+    align-self: flex-start;
+}
+
+.workbench-msg-assistant .workbench-msg-body {
+    background: #fff;
+    border: 1px solid var(--color-border-2);
+    padding: 8px 12px;
+    border-radius: 12px 12px 12px 4px;
+}
+
+/* Skill 上下文 @ 引用 */
+.workbench-msg-skill-context {
+    align-self: center;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 0;
+}
+
+.workbench-skill-context-label {
+    font-size: 11px;
+    color: var(--color-text-3, #86909c);
+}
+
+.workbench-skill-mention {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    border-radius: 6px;
+    background: #f3e8ff;
+    color: #722ed1;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1.4;
+    white-space: nowrap;
+}
+
+.workbench-skill-mention--inline {
+    margin-right: 2px;
+    vertical-align: baseline;
+}
+
+.workbench-msg-user .workbench-skill-mention--inline {
+    background: rgba(255, 255, 255, 0.22);
+    color: #fff;
+}
+
+.workbench-active-skill-bar {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 8px;
+}
+
+.workbench-active-skill-bar[hidden] {
+    display: none !important;
+}
+
+.workbench-active-skill-clear {
+    width: 20px;
+    height: 20px;
+    border: none;
+    border-radius: 50%;
+    background: #f2f3f5;
+    color: #86909c;
+    cursor: pointer;
+    font-size: 14px;
+    line-height: 1;
+    padding: 0;
+    flex-shrink: 0;
+}
+
+.workbench-active-skill-clear:hover {
+    background: #e5e6eb;
+    color: #4e5969;
+}
+
+.workbench-msg-agent {
+    font-size: 10px;
+    color: var(--color-text-3);
+    margin-bottom: 2px;
+}
+
+/* 对话输入区 — 参考卡片式 Composer */
+.workbench-composer-wrap {
+    position: relative;
+    z-index: 1;
+    padding: 10px 12px 14px;
+    background: #fff;
+    border-top: 1px solid var(--color-border-2, #e5e6eb);
+    flex: 0 0 auto;
+    flex-shrink: 0;
+}
+
+.workbench-composer {
+    border: 1px solid var(--color-border-2, #e5e6eb);
+    border-radius: 16px;
+    background: #fff;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+    overflow: visible;
+    transition: box-shadow 0.2s, min-height 0.25s;
+}
+
+.workbench-composer:focus-within {
+    border-color: #c9cdd4;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+}
+
+.workbench-composer.expanded .workbench-composer-body textarea {
+    min-height: 160px;
+    max-height: 280px;
+}
+
+.workbench-composer-body {
+    position: relative;
+    padding: 14px 14px 6px;
+}
+
+.workbench-composer-body textarea {
+    width: 100%;
+    border: none;
+    outline: none;
+    resize: none;
+    padding: 0;
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.6;
+    min-height: 72px;
+    max-height: 140px;
+    font-family: inherit;
+    color: var(--color-text-1, #1d2129);
+    background: transparent;
+}
+
+.workbench-composer-body textarea::placeholder {
+    color: #c9cdd4;
+}
+
+.workbench-composer-hint-row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 4px;
+}
+
+.workbench-composer-hint {
+    margin: 0;
+    font-size: 11px;
+    line-height: 1.45;
+    color: #c9cdd4;
+    text-align: right;
+    flex: 1;
+    max-width: 100%;
+}
+
+.workbench-composer-expand {
+    flex-shrink: 0;
+    width: 24px;
+    height: 24px;
+    border: none;
+    background: transparent;
+    color: #c9cdd4;
+    cursor: pointer;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    padding: 0;
+}
+
+.workbench-composer-expand:hover {
+    color: #86909c;
+    background: #f2f3f5;
+}
+
+.workbench-composer-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 12px 12px;
+}
+
+.workbench-composer-left,
+.workbench-composer-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.workbench-skill-picker-anchor {
+    position: relative;
+}
+
+/* Skill 选择浮层（参考 Skills 列表面板） */
+.workbench-skill-picker {
+    position: absolute;
+    bottom: calc(100% + 10px);
+    left: 0;
+    width: min(360px, calc(100vw - 48px));
+    max-height: min(420px, 52vh);
+    background: #fff;
+    border: 1px solid var(--color-border-2, #e5e6eb);
+    border-radius: 14px;
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.12);
+    z-index: 2100;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+/* display:flex 会覆盖 [hidden] 的 display:none，必须显式隐藏 */
+.workbench-skill-picker[hidden] {
+    display: none !important;
+}
+
+.workbench-skill-picker-header {
+    padding: 14px 16px 8px;
+}
+
+.workbench-skill-picker-header h4 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--color-text-1, #1d2129);
+}
+
+.workbench-skill-picker-search {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0 12px 10px;
+    padding: 8px 12px;
+    border: 1px solid var(--color-border-2, #e5e6eb);
+    border-radius: 10px;
+    background: #f7f8fa;
+}
+
+.workbench-skill-picker-search i {
+    color: #86909c;
+    font-size: 13px;
+}
+
+.workbench-skill-picker-search input {
+    flex: 1;
+    border: none;
+    outline: none;
+    background: transparent;
+    font-size: 13px;
+    color: var(--color-text-1, #1d2129);
+}
+
+.workbench-skill-picker-search input::placeholder {
+    color: #c9cdd4;
+}
+
+.workbench-skill-picker-categories {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 0 12px 10px;
+}
+
+.skill-cat-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 5px 10px;
+    border: 1px solid var(--color-border-2, #e5e6eb);
+    border-radius: 16px;
+    background: #fff;
+    font-size: 12px;
+    color: #4e5969;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.skill-cat-chip:hover {
+    background: #f7f8fa;
+}
+
+.skill-cat-chip.active {
+    background: #f2f3f5;
+    border-color: #c9cdd4;
+    color: #1d2129;
+    font-weight: 500;
+}
+
+.workbench-skill-picker-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 4px 8px 10px;
+}
+
+.workbench-skill-picker-empty {
+    margin: 16px 12px;
+    text-align: center;
+    font-size: 13px;
+    color: #86909c;
+}
+
+.workbench-skill-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    width: 100%;
+    padding: 10px 8px;
+    border: none;
+    border-radius: 10px;
+    background: transparent;
+    cursor: pointer;
+    text-align: left;
+    transition: background 0.15s;
+}
+
+.workbench-skill-item:hover:not(:disabled) {
+    background: #f7f8fa;
+}
+
+.workbench-skill-item.disabled,
+.workbench-skill-item:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+.workbench-skill-item-icon {
+    flex-shrink: 0;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: #f2f3f5;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #722ed1;
+    font-size: 14px;
+}
+
+.workbench-skill-item-icon .fa-play {
+    margin-left: 2px;
+}
+
+.workbench-skill-item-text {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.workbench-skill-item-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--color-text-1, #1d2129);
+    line-height: 1.3;
+}
+
+.workbench-skill-item-desc {
+    font-size: 12px;
+    color: #86909c;
+    line-height: 1.4;
+}
+
+.workbench-composer-icon-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 1px solid var(--color-border-2, #e5e6eb);
+    background: #fff;
+    color: #4e5969;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    padding: 0;
+    transition: background 0.15s, border-color 0.15s;
+}
+
+.workbench-composer-icon-btn:hover {
+    background: #f7f8fa;
+    border-color: #c9cdd4;
+}
+
+.workbench-composer-spinner {
+    color: #86909c;
+    display: flex;
+    align-items: center;
+}
+
+.workbench-spinner-ring {
+    animation: workbench-spin 0.9s linear infinite;
+}
+
+@keyframes workbench-spin {
+    to { transform: rotate(360deg); }
+}
+
+.workbench-composer-stop {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: none;
+    background: #1d2129;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    flex-shrink: 0;
+}
+
+.workbench-composer-stop:hover {
+    background: #000;
+}
+
+.workbench-stop-square {
+    width: 10px;
+    height: 10px;
+    background: #fff;
+    border-radius: 1px;
+    display: block;
+}
+
+.workbench-composer-send {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: none;
+    background: #1d2129;
+    color: #fff;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    padding: 0;
+    flex-shrink: 0;
+}
+
+.workbench-composer-send:hover:not(:disabled) {
+    background: #000;
+}
+
+.workbench-composer-send:disabled {
+    background: #e5e6eb;
+    color: #c9cdd4;
+    cursor: not-allowed;
+}
+
+.workbench-composer.is-processing .workbench-composer-send {
+    display: none;
+}
+
+/* 操作列角标需溢出显示（覆盖 styles.css 的 overflow:hidden） */
+#taskTable td.col-operations {
+    overflow: visible;
+}
+
+.col-operations .operation-buttons,
+.col-operations .operation-buttons-main {
+    overflow: visible;
+}
+
+/* 列表操作列：工作台小图标 */
+.workbench-icon-btn {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 28px;
+    height: 28px;
+    margin-left: 6px;
+    margin-right: 4px;
+    padding: 0;
+    border: 1px solid var(--color-border-2, #e5e6eb);
+    border-radius: 6px;
+    background: #fff;
+    color: #4e5969;
+    cursor: pointer;
+    vertical-align: middle;
+    font-size: 13px;
+    line-height: 1;
+    overflow: visible;
+    z-index: 2;
+}
+
+.workbench-gemini-img {
+    display: block;
+    width: 18px;
+    height: 18px;
+    object-fit: contain;
+    pointer-events: none;
+}
+
+.workbench-gemini-wrap {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+}
+
+.workbench-gemini-spinner {
+    position: absolute;
+    inset: -4px;
+    font-size: 22px;
+    color: #ff7d00;
+    opacity: 0.85;
+}
+
+.workbench-icon-btn--generating .workbench-gemini-img {
+    opacity: 0.45;
+}
+
+.workbench-icon-btn:hover {
+    border-color: rgb(var(--primary-6, 22, 93, 255));
+    color: rgb(var(--primary-6, 22, 93, 255));
+    background: #f2f7ff;
+}
+
+.workbench-icon-btn--generating {
+    border-color: #ffcd5c;
+    color: #ff7d00;
+    background: #fff7e8;
+}
+
+.workbench-icon-btn--ready {
+    border-color: #7be188;
+    color: #00b42a;
+    background: #e8ffea;
+}
+
+.workbench-icon-badge {
+    position: absolute;
+    top: -7px;
+    right: -8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    border-radius: 9px;
+    background: #00b42a;
+    color: #fff;
+    font-size: 10px;
+    font-weight: 600;
+    line-height: 1;
+    box-sizing: border-box;
+    border: 2px solid #fff;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+    white-space: nowrap;
+    z-index: 3;
+    pointer-events: none;
+}
+
+.workbench-skill-status {
+    display: inline-block;
+    margin-top: 6px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 500;
+}
+
+.workbench-skill-status--none {
+    background: #f2f3f5;
+    color: #86909c;
+}
+
+.workbench-skill-status--generating {
+    background: #fff7e8;
+    color: #ff7d00;
+}
+
+.workbench-skill-status--ready,
+.workbench-skill-status--local {
+    background: #e8ffea;
+    color: #00b42a;
+}
+
+.page-header-v2 {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.v2-badge {
+    font-size: 11px;
+    padding: 2px 8px;
+    background: #722ed1;
+    color: #fff;
+    border-radius: 4px;
+    font-weight: 600;
+}
+
+.v1-link {
+    font-size: 13px;
+    color: var(--color-text-2);
+    text-decoration: none;
+}
+
+.v1-link:hover {
+    color: rgb(var(--primary-6, 22, 93, 255));
+}
+
+@media (max-width: 900px) {
+    .workbench-body {
+        grid-template-columns: 1fr;
+        grid-template-rows: 1fr auto;
+    }
+
+    .workbench-chat-panel {
+        max-height: 280px;
+        min-height: 0;
+    }
+}
