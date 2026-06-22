@@ -4,13 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>创意生产任务管理</title>
-    <link rel="stylesheet" href="styles.css?v=20260609v">
+    <link rel="stylesheet" href="styles.css?v=20260611v14">
+    <link rel="stylesheet" href="styles-xiaohongshu-v1.1.css?v=20260611v14">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 </head>
 <body>
     <div class="app-layout">
     <header class="page-header" style="display:flex;align-items:center;justify-content:space-between;gap:16px;">
-        <h1 class="page-title">创意生产平台</h1>
+        <h1 class="page-title">创意生产平台 <span class="v11-badge">V1.1</span></h1>
         <a href="index-v2.html" style="font-size:13px;color:#722ed1;text-decoration:none;white-space:nowrap;">体验 V2 对话式 Agent →</a>
     </header>
     <div class="container">
@@ -702,7 +703,31 @@
         </div>
     </div>
 
-    <script src="skill-module.js?v=20260609v"></script>
-    <script src="script.js?v=20260609v"></script>
+    <!-- V1.1 小红书笔记库上传弹窗 -->
+    <div id="noteLibraryUploadModal" class="modal">
+        <div class="modal-content note-library-modal-content">
+            <div class="modal-header">
+                <h3 class="note-library-modal-title">上传素材 · 笔记库</h3>
+                <span class="close" onclick="closeNoteLibraryUploadModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="note-library-upload-zone" id="noteLibraryUploadZone">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                    <p><strong>上传笔记配图</strong>（一条笔记可包含多图）</p>
+                    <p class="upload-hint">支持 JPG、PNG、WebP，可拖拽或点击选择</p>
+                    <input type="file" id="noteLibraryFileInput" multiple accept="image/jpeg,image/png,image/webp" style="display:none;">
+                </div>
+                <div id="noteLibraryMaterialsList" class="note-library-materials-list"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" onclick="confirmNoteLibraryUpload()">确认上传笔记库</button>
+                <button type="button" class="btn btn-secondary" onclick="closeNoteLibraryUploadModal()">取消</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="skill-module.js?v=20260611v14"></script>
+    <script src="xiaohongshu-v1.1.js?v=20260611v14"></script>
+    <script src="script.js?v=20260611v14"></script>
 </body>
 </html>

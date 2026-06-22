@@ -25,7 +25,7 @@ class TableColumnManager {
     }
     
     initializeColumns() {
-        return [
+        const base = [
             { key: 'select', label: '选择', type: 'checkbox', width: 60, visible: true, fixed: true, cssClass: 'col-select' },
             { key: 'createTime', label: '创建时间', type: 'datetime', width: 140, visible: true, sortable: true },
             { key: 'expectedTime', label: '期望交付时间', type: 'datetime', width: 140, visible: true, sortable: true },
@@ -50,9 +50,11 @@ class TableColumnManager {
             { key: 'creativeStrategyTag', label: '创意策略标签', type: 'text', width: 150, visible: true },
             { key: 'requirementNote', label: '需求备注', type: 'text', width: 150, visible: true },
             { key: 'referenceImages', label: '参考图', type: 'links', width: 120, visible: true, formatter: 'formatReferenceImages', cssClass: 'reference-images-cell' },
-            { key: 'regenerationSuggestion', label: '重新生成建议', type: 'text', width: 160, visible: true, cssClass: 'regeneration-suggestion-cell' },
-            { key: 'operations', label: '操作', type: 'operations', width: 248, visible: true, fixed: true, cssClass: 'col-operations' }
+            { key: 'regenerationSuggestion', label: '重新生成建议', type: 'text', width: 160, visible: true, cssClass: 'regeneration-suggestion-cell' }
         ];
+        const xhsCols = typeof getXiaohongshuTableColumns === 'function' ? getXiaohongshuTableColumns() : [];
+        const operations = { key: 'operations', label: '操作', type: 'operations', width: 248, visible: true, fixed: true, cssClass: 'col-operations' };
+        return [...base, ...xhsCols, operations];
     }
     
     loadColumnConfig() {
@@ -175,7 +177,28 @@ const mockData = [
         creativeStrategyTag: '情绪营销',
         requirementNote: '突出产品功效',
         referenceImages: ['https://example.com/ref3.jpg'],
-        regenerationSuggestion: ''
+        regenerationSuggestion: '',
+        xiaohongshuOrder: {
+            projectNames: ['满天星', '母商'],
+            contentName: '美妆种草合集',
+            noteType: '我的笔记',
+            contentModel: '素人购物分享',
+            contentDirection: '货价',
+            wordType: '品类',
+            topic: '平价美妆好物分享',
+            referenceLink: 'www.xiaohongshu.com/explore/beauty',
+            requirementNote: '突出产品功效与性价比',
+            coverRequirement: '封面展示产品平铺',
+            innerPageRequirement: '内页按步骤展示使用前后对比',
+            titleCopy: '平价美妆好物分享',
+            bodyCopy: '分享几款近期爱用的平价美妆，适合学生党入手。',
+            searchKeywords: '平价美妆',
+            referenceImages: [
+                'https://a.vpimg3.com/upload/otd2/creatives/20260622/xhs_note_upload/1782113222108149.jpg',
+                'https://a.vpimg3.com/upload/otd2/creatives/20260622/xhs_note_upload/1782113179657715.jpg'
+            ],
+            uploadAccount: '139****5678'
+        }
     },
     {
         id: '7CrNkAAG',
@@ -312,7 +335,7 @@ const mockData = [
         expectedHours: 27,
         taskHours: 60,
         submitter: '13800138007',
-        designer: 'AIGC',
+        designer: 'OA002',
         status: 'generating',
         updateTime: '2024-01-16 10:30:00',
         generationId: 'GEN007',
@@ -333,13 +356,26 @@ const mockData = [
         requirementNote: 'ins风格穿搭推荐',
         referenceImages: ['https://example.com/ref10.jpg'],
         regenerationSuggestion: '',
-        // 小红书特有字段
-        xiaohongshuData: {
-            topic: 'ins风辣妹穿搭推荐',
-            coverText: 'ins风辣妹穿搭推荐',
-            contentText: 'ins风辣妹穿搭推荐',
+        xiaohongshuOrder: {
+            projectNames: ['日常', '趋势品'],
+            contentName: 'ins风辣妹穿搭推荐',
+            noteType: '合作笔记',
+            contentModel: 'OOTD',
+            contentDirection: '场景',
+            wordType: '风格',
+            topic: '秋冬辣妹穿搭灵感',
+            referenceLink: 'www.xiaohongshu.com/explore/ootd-sample',
+            requirementNote: '突出穿搭质感，偏韩系氛围',
+            coverRequirement: '封面需展示全身穿搭与氛围感场景',
+            innerPageRequirement: '内页展示单品细节与搭配清单',
+            titleCopy: 'ins风辣妹穿搭推荐',
+            bodyCopy: '分享一套适合秋冬的辣妹穿搭，上衣+半裙+靴子，显高又显瘦。颜色以黑灰为主，点缀金属配饰更有层次感。',
             searchKeywords: '小辣椒',
-            referenceLink: 'www.xiaohongshu.com'
+            referenceImages: [
+                'https://a.vpimg3.com/upload/otd2/creatives/20260622/xhs_note_upload/1782113222108149.jpg',
+                'https://a.vpimg3.com/upload/otd2/creatives/20260622/xhs_note_upload/1782113179657715.jpg'
+            ],
+            uploadAccount: '13800138007'
         }
     },
     {
@@ -427,7 +463,78 @@ const mockData = [
         creativeStrategyTag: '实拍测评',
         requirementNote: '小红书风格实拍短视频',
         referenceImages: ['https://example.com/ref13.jpg', 'https://example.com/ref14.jpg'],
-        regenerationSuggestion: ''
+        regenerationSuggestion: '',
+        xiaohongshuOrder: {
+            projectNames: ['定', '裂'],
+            contentName: '家居好物实测',
+            noteType: '员工笔记',
+            contentModel: '选购指南',
+            contentDirection: '痛点',
+            wordType: '场景',
+            topic: '小户型收纳神器测评',
+            referenceLink: 'www.xiaohongshu.com/explore/home',
+            requirementNote: '实拍测评风格，突出使用场景',
+            coverRequirement: '封面展示产品使用前后对比',
+            innerPageRequirement: '分步骤展示安装与使用效果',
+            titleCopy: '小户型收纳神器',
+            bodyCopy: '实测三款适合小户型的收纳好物，解决衣柜不够用的问题。',
+            searchKeywords: '收纳神器',
+            referenceImages: [
+                'https://a.vpimg3.com/upload/otd2/creatives/20260622/xhs_note_upload/1782113222108149.jpg',
+                'https://a.vpimg3.com/upload/otd2/creatives/20260622/xhs_note_upload/1782113179657715.jpg'
+            ],
+            uploadAccount: '137****9012'
+        }
+    },
+    {
+        id: '7CrNkAAO',
+        createTime: '2024-01-18 09:00:00',
+        expectedTime: '2024-01-20 18:00:00',
+        expectedHours: 48,
+        taskHours: 20,
+        submitter: '136****3456',
+        designer: 'OA003',
+        status: 'generating',
+        updateTime: '2024-01-18 09:30:00',
+        generationId: 'GEN011',
+        generationType: '单品单图',
+        channel: '小红书',
+        materialSource: '人工生产',
+        templateCategory: '原生图',
+        productQuantity: 1,
+        materialQuantity: 3,
+        materialSize: '1080x1440',
+        productId: 'PROD013/国A级',
+        productLevel: '一级',
+        productCategory: '美妆',
+        anxinInfo: generateRandomAnxinInfo(),
+        priceInfo: '市价259|唯品179|到手139|直降40|折扣0.78|',
+        applicationScenario: '促销',
+        creativeStrategyTag: '明星博主同款',
+        requirementNote: 'V1.1 笔记库上传测试',
+        referenceImages: [],
+        regenerationSuggestion: '',
+        xiaohongshuOrder: {
+            projectNames: ['趋势品', '满天星', '日常'],
+            contentName: '秋冬口红试色合集',
+            noteType: '授权笔记',
+            contentModel: '明星博主同款',
+            contentDirection: '正品',
+            wordType: '品牌',
+            topic: '6支秋冬必备口红试色',
+            referenceLink: 'www.xiaohongshu.com/explore/lipstick',
+            requirementNote: '需展示手臂试色与上嘴效果',
+            coverRequirement: '九宫格试色拼图封面',
+            innerPageRequirement: '每支口红单独一页，标注色号',
+            titleCopy: '6支秋冬口红试色',
+            bodyCopy: '整理了6支适合黄皮的秋冬口红，包含哑光与滋润质地，附试色对比。',
+            searchKeywords: '秋冬口红',
+            referenceImages: [
+                'https://a.vpimg3.com/upload/otd2/creatives/20260622/xhs_note_upload/1782113222108149.jpg',
+                'https://a.vpimg3.com/upload/otd2/creatives/20260622/xhs_note_upload/1782113179657715.jpg'
+            ],
+            uploadAccount: '136****3456'
+        }
     }
 ];
 
@@ -3267,6 +3374,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     renderTable();
     if (typeof initSkillModule === 'function') initSkillModule();
+    if (typeof initV11XiaohongshuHint === 'function') initV11XiaohongshuHint();
 });
 
 // 渲染 colgroup 固定列宽，避免选中行/批量操作栏触发列宽塌陷重叠
@@ -3328,7 +3436,7 @@ function renderTable() {
                 
                 subRow.innerHTML = `
                     <td></td>
-                    <td colspan="20" class="sub-task-content">
+                    <td colspan="${typeof getDetailRowColspan === 'function' ? getDetailRowColspan() : 25}" class="sub-task-content">
                         <div class="sub-task-info">
                             <span class="sub-task-label">设计师: ${subTask.designer}</span>
                             <span class="sub-task-status">状态: ${statusMap[subTask.status]?.text || subTask.status || '未知状态'}</span>
@@ -3343,49 +3451,15 @@ function renderTable() {
                 tbody.appendChild(subRow);
             });
         }
-        
-        // 如果是小红书任务且有小红书数据，添加展开行（默认隐藏）
-        if (task.channel === 'xiaohongshu' && task.xiaohongshuData) {
-            const xiaohongshuRow = document.createElement('tr');
-            xiaohongshuRow.className = 'xiaohongshu-detail-row';
-            xiaohongshuRow.dataset.parentId = task.id;
-            xiaohongshuRow.style.display = 'none';
-            
-            xiaohongshuRow.innerHTML = `
-                <td></td>
-                <td colspan="20" class="xiaohongshu-detail-content">
-                    <div class="xiaohongshu-details">
-                        <div class="detail-item">
-                            <span class="detail-label">选题：</span>
-                            <span class="detail-value">${task.xiaohongshuData.topic}</span>
-                        </div>
-                        <div class="detail-item">
-                            <span class="detail-label">封面文案：</span>
-                            <span class="detail-value">${task.xiaohongshuData.coverText}</span>
-                        </div>
-                        <div class="detail-item">
-                            <span class="detail-label">内页文案：</span>
-                            <span class="detail-value">${task.xiaohongshuData.contentText}</span>
-                        </div>
-                        <div class="detail-item">
-                            <span class="detail-label">搜索词：</span>
-                            <span class="detail-value">${task.xiaohongshuData.searchKeywords}</span>
-                        </div>
-                        <div class="detail-item">
-                            <span class="detail-label">参考链接：</span>
-                            <span class="detail-value">
-                                <a href="https://${task.xiaohongshuData.referenceLink}" target="_blank" class="reference-link">
-                                    ${task.xiaohongshuData.referenceLink}
-                                </a>
-                            </span>
-                        </div>
-                    </div>
-                </td>
-            `;
-            
-            tbody.appendChild(xiaohongshuRow);
-        }
     });
+
+    if (typeof initXhsTableInteractions === 'function') {
+        initXhsTableInteractions();
+    }
+
+    if (typeof initV11XiaohongshuHint === 'function') {
+        initV11XiaohongshuHint();
+    }
 
     updateBulkActions();
 }
@@ -3403,7 +3477,7 @@ function renderTableHeader(thead) {
         }
         
         th.style.setProperty('--column-width', `${column.width}px`);
-        if (column.key === 'operations' || column.key === 'regenerationSuggestion') {
+        if (column.key === 'operations' || column.key === 'regenerationSuggestion' || (column.key && column.key.startsWith('xhs_'))) {
             th.style.width = `${column.width}px`;
             th.style.maxWidth = `${column.width}px`;
             th.style.minWidth = `${column.width}px`;
@@ -3423,13 +3497,12 @@ function renderTableRow(row, task) {
         // 根据列类型渲染内容
         let content = '';
         switch (column.key) {
-            case 'select':
-                const hasExpandableContent = (task.generationType === '单品多视频' && task.subTasks && task.subTasks.length > 0) || 
-                                           (task.channel === 'xiaohongshu' && task.xiaohongshuData);
-                const expandButton = hasExpandableContent 
-                    ? `<button class="btn btn-sm btn-secondary expand-btn" onclick="toggleExpandableContent('${task.id}')" data-expanded="false">
+            case 'select': {
+                const hasExpandableContent = task.generationType === '单品多视频' && task.subTasks && task.subTasks.length > 0;
+                const expandButton = hasExpandableContent
+                    ? `<button type="button" class="btn btn-sm btn-secondary expand-btn" onclick="toggleExpandableContent('${task.id}')" data-expanded="false" title="展开子任务" aria-label="展开子任务">
                          <i class="fas fa-chevron-down"></i>
-                       </button>` 
+                       </button>`
                     : '';
                 content = `
                     <div style="display: flex; align-items: center; gap: 5px;">
@@ -3440,6 +3513,7 @@ function renderTableRow(row, task) {
                     </div>
                 `;
                 break;
+            }
             case 'taskHours':
                 content = formatTaskHours(task.taskHours);
                 break;
@@ -3451,7 +3525,9 @@ function renderTableRow(row, task) {
                 content = `<span class="status-tag ${statusInfo.class}">${statusInfo.text}</span>`;
                 break;
             case 'channel':
-                content = task.channel === 'xiaohongshu' ? '小红书' : task.channel;
+                content = (task.channel === 'xiaohongshu' || task.channel === '小红书')
+                    ? '<span class="xhs-channel-label">小红书</span>'
+                    : (task.channel || '—');
                 break;
             case 'materialSize':
                 content = formatMaterialSize(task.materialSize, task.channel);
@@ -3479,7 +3555,11 @@ function renderTableRow(row, task) {
                 content = `<div class="operation-buttons">${getOperationButtonsHTML(task)}</div>`;
                 break;
             default:
-                content = task[column.key] || '-';
+                if (column.key && column.key.startsWith('xhs_') && typeof renderXhsTableCell === 'function') {
+                    content = renderXhsTableCell(task, column.key);
+                } else {
+                    content = task[column.key] || '-';
+                }
         }
         
         td.innerHTML = content;
@@ -3491,7 +3571,7 @@ function renderTableRow(row, task) {
         
         // 设置列宽
         td.style.setProperty('--column-width', `${column.width}px`);
-        if (column.key === 'operations' || column.key === 'regenerationSuggestion') {
+        if (column.key === 'operations' || column.key === 'regenerationSuggestion' || (column.key && column.key.startsWith('xhs_'))) {
             td.style.width = `${column.width}px`;
             td.style.maxWidth = `${column.width}px`;
             td.style.minWidth = `${column.width}px`;
@@ -3582,11 +3662,10 @@ function getOperationButtonsHTML(task) {
     if (task.designer === 'AIGC') {
         buttonsHTML = '';
     }
-    // 待分配设计师状态 - 显示分配设计师和导出任务
+    // 待分配设计师状态
     else if (task.status === 'unassigned') {
         buttonsHTML = `
             <button class="btn btn-primary" onclick="assignDesigner('${task.id}')">分配设计师</button>
-            <button class="btn btn-success" onclick="exportSingleTask('${task.id}')">导出任务</button>
         `;
     }
     // ued设计师
@@ -4113,8 +4192,12 @@ function setUploadModalView(mode, options = {}) {
     }
 }
 
-// 打开上传素材弹窗（与 Skill 结果弱耦合：有图片则预填打标，否则正常上传）
+// 打开上传素材弹窗（小红书走笔记库，其他渠道走现网）
 function openUploadModal(taskId) {
+    if (typeof openXiaohongshuUploadIfNeeded === 'function' && openXiaohongshuUploadIfNeeded(taskId)) {
+        return;
+    }
+
     const task = taskData.find(t => t.id === taskId);
 
     if (typeof isSkillResultsLocked === 'function' && isSkillResultsLocked(task)) {
@@ -4942,26 +5025,19 @@ window.onclick = function(event) {
 }
 
 // 切换子任务展开/收起
-// 切换展开内容显示（支持子任务和小红书详情）
 function toggleExpandableContent(taskId) {
     const button = document.querySelector(`[onclick="toggleExpandableContent('${taskId}')"]`);
+    if (!button) return;
     const isExpanded = button.getAttribute('data-expanded') === 'true';
     
-    // 切换子任务行
     const subRows = document.querySelectorAll(`tr[data-parent-id='${taskId}'].sub-task-row`);
-    // 切换小红书详情行
-    const xiaohongshuRows = document.querySelectorAll(`tr[data-parent-id='${taskId}'].xiaohongshu-detail-row`);
     
     if (isExpanded) {
-        // 收起
         subRows.forEach(row => row.style.display = 'none');
-        xiaohongshuRows.forEach(row => row.style.display = 'none');
         button.setAttribute('data-expanded', 'false');
         button.innerHTML = '<i class="fas fa-chevron-down"></i>';
     } else {
-        // 展开
         subRows.forEach(row => row.style.display = 'table-row');
-        xiaohongshuRows.forEach(row => row.style.display = 'table-row');
         button.setAttribute('data-expanded', 'true');
         button.innerHTML = '<i class="fas fa-chevron-up"></i>';
     }
